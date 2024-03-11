@@ -1,5 +1,5 @@
 #pragma once
-#include <NimBLEDevice.h>
+#include <algorithm>
 #include <cstddef>
 
 namespace libsesame3bt {
@@ -7,10 +7,16 @@ namespace libsesame3bt {
 class Sesame {
  public:
 	static constexpr size_t TOKEN_SIZE = 4;
-	static inline const BLEUUID SESAME3_SRV_UUID{"0000fd81-0000-1000-8000-00805f9b34fb"};
+	static inline const char* SESAME3_SRV_UUID{"0000fd81-0000-1000-8000-00805f9b34fb"};
+	static inline const char* TxUUID{"16860002-a5ae-9856-b6d3-dbb4c676993e"};
+	static inline const char* RxUUID{"16860003-a5ae-9856-b6d3-dbb4c676993e"};
 	static constexpr size_t PK_SIZE = 64;
 	static constexpr size_t SECRET_SIZE = 16;
 	static constexpr size_t CMAC_TAG_SIZE = 4;
+
+	static constexpr size_t MAX_CMD_TAG_SIZE_OS2 = 21;
+	static constexpr size_t MAX_CMD_TAG_SIZE_OS3 = 29;
+	static constexpr size_t MAX_HISTORY_TAG_SIZE = std::max(MAX_CMD_TAG_SIZE_OS2, MAX_CMD_TAG_SIZE_OS3);
 
 	enum class model_t : int8_t {
 		unknown = -1,

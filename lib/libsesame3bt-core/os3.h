@@ -1,16 +1,16 @@
 #pragma once
 #include <array>
 #include <cstdint>
-#include "Sesame.h"
 #include "api_wrapper.h"
+#include "libsesame3bt/Sesame.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
-class SesameClient;
+class SesameClientCoreImpl;
 
 class OS3Handler {
  public:
-	OS3Handler(SesameClient* client) : client(client) {}
+	OS3Handler(SesameClientCoreImpl* client) : client(client) {}
 	OS3Handler(const OS3Handler&) = delete;
 	OS3Handler& operator=(const OS3Handler&) = delete;
 	bool init() { return true; }
@@ -35,7 +35,7 @@ class OS3Handler {
 	static constexpr size_t MAX_HISTORY_TAG_SIZE = 29;
 
  private:
-	SesameClient* client;
+	SesameClientCoreImpl* client;
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
 	long long dec_count = 0;
@@ -48,4 +48,4 @@ class OS3Handler {
 	static constexpr int8_t voltage_scale(Sesame::model_t model) { return model == Sesame::model_t::sesame_bike_2 ? 2 : 1; };
 };
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

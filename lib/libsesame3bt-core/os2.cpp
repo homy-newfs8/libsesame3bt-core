@@ -1,8 +1,9 @@
 #include "os2.h"
 #include <mbedtls/cmac.h>
 #include <mbedtls/ecdh.h>
-#include "Sesame.h"
-#include "SesameClient.h"
+#include "SesameClientCoreImpl.h"
+#include "libsesame3bt/Sesame.h"
+#include "libsesame3bt/core.h"
 #include "util.h"
 
 #ifndef LIBSESAME3BT_DEBUG
@@ -10,7 +11,7 @@
 #endif
 #include "debug.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
 namespace {
 
@@ -157,7 +158,7 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	                    std::copy(bpk.begin() + 1, bpk.end(), std::copy(sesame_ki.cbegin(), sesame_ki.cend(), resp.begin()))));
 
 	if (send_command(Sesame::op_code_t::sync, Sesame::item_code_t::login, resp.data(), resp.size(), false)) {
-		client->update_state(SesameClient::state_t::authenticating);
+		client->update_state(SesameClientCore::state_t::authenticating);
 	} else {
 		client->disconnect();
 	}
@@ -177,19 +178,19 @@ OS2Handler::handle_response_login(const std::byte* in, size_t in_len) {
 		return;
 	}
 	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<SesameClient::BotSetting>(msg->mecha_setting);
+		client->setting.emplace<BotSetting>(msg->mecha_setting);
 	} else {
-		client->setting.emplace<SesameClient::LockSetting>(msg->mecha_setting);
+		client->setting.emplace<LockSetting>(msg->mecha_setting);
 	}
 	update_sesame_status(msg->mecha_status);
-	client->update_state(SesameClient::state_t::active);
+	client->update_state(SesameClientCore::state_t::active);
 	client->fire_status_callback();
 }
 
 void
 OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 	DEBUG_PRINTF("history(%u): %s\n", in_len, util::bin2hex(in, in_len).c_str());
-	SesameClient::History history{};
+	History history{};
 	if (in_len < 2) {
 		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
 		client->fire_history_callback(history);
@@ -255,9 +256,9 @@ OS2Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_t*>(in);
 	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<SesameClient::BotSetting>(msg->setting);
+		client->setting.emplace<BotSetting>(msg->setting);
 	} else {
-		client->setting.emplace<SesameClient::LockSetting>(msg->setting);
+		client->setting.emplace<LockSetting>(msg->setting);
 	}
 }
 
@@ -417,4 +418,4 @@ OS2Handler::generate_tag_response(const std::array<std::byte, 1 + Sesame::PK_SIZ
 	return true;
 }
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

@@ -1,14 +1,17 @@
-# libsesame3bt
-ESP32 library to control SESAME 5 / SESAME 5 PRO / SESAME 3 / SESAME 4 / SESAME bot / SESAME 3 bike (SESAME Cycle) via Bluetooth LE
+# libsesame3bt-core
+Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME 4 / SESAME 3 / SESAME bot / SESAME 3 bike (SESAME Cycle)
 
 # Usage
-platformio.ini
+This library contains the message processing part. BLE connections must be handled outside of this library.
+[libsesame3bt](https://github.com/homy-newfs8/libsesame3bt) is a library that integrates this library with the ESP32 / Android / NimBLE libraries.
+
+With libsesame3, you can control SESAME as follows.
 ```ini
 [env]
 platform = espressif32
 framework = arduino
 lib_deps =
-	https://github.com/homy-newfs8/libsesame3bt#0.11.0
+	https://github.com/homy-newfs8/libsesame3bt#0.13.0
 build_flags =
 	-std=gnu++17
 build_unflags =

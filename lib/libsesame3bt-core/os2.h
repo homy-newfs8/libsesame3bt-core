@@ -4,16 +4,16 @@
 #include <mbedtls/entropy.h>
 #include <array>
 #include <cstdint>
-#include "Sesame.h"
 #include "api_wrapper.h"
+#include "libsesame3bt/Sesame.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
-class SesameClient;
+class SesameClientCoreImpl;
 
 class OS2Handler {
  public:
-	OS2Handler(SesameClient* client) : client(client) {}
+	OS2Handler(SesameClientCoreImpl* client) : client(client) {}
 	OS2Handler(const OS2Handler&) = delete;
 	OS2Handler& operator=(const OS2Handler&) = delete;
 	bool init() { return static_initialized; }
@@ -38,7 +38,7 @@ class OS2Handler {
 	static constexpr size_t MAX_HISTORY_TAG_SIZE = 21;
 
  private:
-	SesameClient* client;
+	SesameClientCoreImpl* client;
 	api_wrapper<mbedtls_ecp_point> sesame_pk{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
@@ -70,4 +70,4 @@ class OS2Handler {
 	};
 };
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

@@ -1,8 +1,15 @@
-# libsesame3bt
-SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのESP32用ライブラリ
+# libsesame3bt-core
+SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのライブラリ
 
 ## 概要
-このライブラリはESP32マイコンで[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。Bluetooth LE経由で以下の機能を実行できます。
+このライブラリはBluetooth LE接続で[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。本ライブラリはSESAMEのメッセージ処理部分のみが含まれています。
+
+実行する環境に合わせてフレームワークやBLEライブラリを組み合わせることが可能です。
+
+[libsesame3bt](https://github.com/homy-newfs8/libsesame3bt) はESP32 Arduino環境で NimBLE ライブラリを結合して利用可能としたライブラリです。
+他の環境で利用する場合はlibsesame3btを参考に本ライブラリを使用してください。
+
+以下の機能を実行できます。
 
 - SESAMEのスキャン
 - SESAME状態の受信
@@ -29,14 +36,16 @@ SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのESP3
 - C++17コンパイラの使用が前提となっています。PlatformIO上のESP32向け開発でC++17コンパイラを利用可能にする方法については、`platformio.ini`の`build_flags`と`build_unflags`の`-std`オプションを参照してください。
 
 ## 関連リポジトリ
+- [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)
+ESP32 Arduino + NimBLE と結合したライブラリ
 - [ESP32Sesame3App](https://github.com/homy-newfs8/ESP32Sesame3App)
-本ライブラリを使ったアプリケーションサンプル
+libsesame3btを使ったアプリケーションサンプル
 - [esphome-sesame](https://github.com/homy-newfs8/esphome-sesame3)
 [ESPHome](https://esphome.io/)でSESAMEを使うための外部コンポーネント
 
 ## 制限事項
 - 本ライブラリはSESAMEデバイスの初期設定を行うことができません。公式アプリで初期設定済みのSESAMEのみ制御可能です。
-- ライブラリのドキュメントはありません。[example](example)フォルダに格納されているサンプルプログラム、サンプルアプリである[ESP32Sesame3App](https://github.com/homy-newfs8/ESP32Sesame3App)、ライブラリ自体のソースコードを参照願います。
+- ライブラリのドキュメントはありません。[libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)のソース、サンプルアプリである[ESP32Sesame3App](https://github.com/homy-newfs8/ESP32Sesame3App)、本ライブラリ自体のソースコードを参照願います。
 
 ## 謝辞
 

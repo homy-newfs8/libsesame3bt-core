@@ -1,18 +1,19 @@
 {
-	"name": "libsesame3bt",
-	"version": "0.12.0-dev",
-	"description": "Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME 3 / SESAME 4 / SESAME bot / SESAME 3 bike (SESAME Cycle)\nNeeds C++17 environment.",
+	"name": "libsesame3bt-core",
+	"version": "0.1.0-dev",
+	"description": "Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME 4 / SESAME 3 / SESAME bot / SESAME 3 bike (SESAME Cycle)\nNeeds C++17 environment.",
 	"license": "MIT AND Apache-2.0",
-	"frameworks": "Arduino",
-	"platforms": "espressif32",
+	"frameworks": "*",
+	"platforms": "*",
 	"build": {
-		"srcDir": "lib/libsesame3bt",
+		"srcDir": "lib/libsesame3bt-core",
+		"includeDir": "lib/libsesame3bt-core/include",
 		"flags": "-std=gnu++17",
 		"unflags": "-std=gnu++11"
 	},
 	"export": {
 		"include": [
-			"lib/libsesame3bt",
+			"lib/libsesame3bt-core",
 			"example",
 			"README.md",
 			"README.ja.md",
@@ -20,6 +21,5 @@
 		]
 	},
 	"dependencies": {
-		"h2zero/NimBLE-Arduino": "^1.4.0"
 	}
 }

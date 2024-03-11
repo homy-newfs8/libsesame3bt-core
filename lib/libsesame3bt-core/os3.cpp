@@ -1,7 +1,8 @@
 #include "os3.h"
 #include <mbedtls/cmac.h>
-#include "Sesame.h"
-#include "SesameClient.h"
+#include "SesameClientCoreImpl.h"
+#include "libsesame3bt/Sesame.h"
+#include "libsesame3bt/core.h"
 #include "util.h"
 
 #ifndef LIBSESAME3BT_DEBUG
@@ -9,7 +10,7 @@
 #endif
 #include "debug.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
 namespace {
 
@@ -124,7 +125,7 @@ OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	client->is_key_shared = true;
 	init_endec_iv(msg->token);
 	if (send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false)) {
-		client->update_state(SesameClient::state_t::authenticating);
+		client->update_state(SesameClientCore::state_t::authenticating);
 	} else {
 		client->disconnect();
 	}
@@ -158,10 +159,10 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 		return;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
-	client->setting.emplace<SesameClient::LockSetting>(msg->setting);
+	client->setting.emplace<LockSetting>(msg->setting);
 	setting_received = true;
-	if (client->state != SesameClient::state_t::active && setting_received && status_received) {
-		client->update_state(SesameClient::state_t::active);
+	if (client->state != SesameClientCore::state_t::active && setting_received && status_received) {
+		client->update_state(SesameClientCore::state_t::active);
 	}
 }
 
@@ -175,15 +176,15 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	client->sesame_status = {msg->status, voltage_scale(client->model)};
 	client->fire_status_callback();
 	status_received = true;
-	if (client->state != SesameClient::state_t::active && setting_received && status_received) {
-		client->update_state(SesameClient::state_t::active);
+	if (client->state != SesameClientCore::state_t::active && setting_received && status_received) {
+		client->update_state(SesameClientCore::state_t::active);
 	}
 }
 
 void
 OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 	DEBUG_PRINTF("history(%u): %s\n", in_len, util::bin2hex(in, in_len).c_str());
-	SesameClient::History history{};
+	History history{};
 	if (in_len < 1) {
 		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
 		client->fire_history_callback(history);
@@ -237,4 +238,4 @@ OS3Handler::init_endec_iv(const std::byte (&nonce)[Sesame::TOKEN_SIZE]) {
 	std::copy(std::cbegin(nonce), std::cend(nonce), &client->enc_iv[sizeof(enc_count) + 1]);
 }
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

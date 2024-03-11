@@ -1,18 +1,17 @@
-#include "SesameClient.h"
-#include <Arduino.h>
+#include "SesameClientCoreImpl.h"
 #include <mbedtls/cmac.h>
 #include <mbedtls/ecdh.h>
 #include <cinttypes>
-#include "api_wrapper.h"
+#include "libsesame3bt/core.h"
 #include "os2.h"
 #include "util.h"
 
 #ifndef LIBSESAME3BT_DEBUG
-#define LIBSESAME3BT_DEBUG 0
+#define LIBSESAME3BT_DEBUG 1
 #endif
 #include "debug.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
 namespace {
 
@@ -30,37 +29,29 @@ constexpr size_t IV_COUNTER_SIZE = 5;
 using util::to_cptr;
 using util::to_ptr;
 
-SesameClient::SesameClient() {}
+using state_t = SesameClientCore::state_t;
 
-SesameClient::~SesameClient() {
-	if (blec) {
-		blec->setClientCallbacks(nullptr, true);
-		NimBLEDevice::deleteClient(blec);
-	}
-}
+SesameClientCoreImpl::SesameClientCoreImpl(SesameClientBackend* backend) : backend(backend) {}
+
+SesameClientCoreImpl::~SesameClientCoreImpl() {}
 
 void
-SesameClient::reset_session() {
+SesameClientCoreImpl::reset_session() {
 	ccm_ctx.reset();
 	is_key_shared = false;
 }
 
 void
-SesameClient::disconnect() {
-	if (!blec) {
-		return;
+SesameClientCoreImpl::disconnect() {
+	if (backend) {
+		backend->disconnect();
 	}
-	// prevent disconnect callback loop
-	blec->setClientCallbacks(nullptr, false);
-	NimBLEDevice::deleteClient(blec);
-	blec = nullptr;
 	reset_session();
 	update_state(state_t::idle);
 }
 
 bool
-SesameClient::begin(const BLEAddress& address, Sesame::model_t model) {
-	this->address = address;
+SesameClientCoreImpl::begin(Sesame::model_t model) {
 	this->model = model;
 	switch (model) {
 		case Sesame::model_t::sesame_3:
@@ -85,7 +76,7 @@ SesameClient::begin(const BLEAddress& address, Sesame::model_t model) {
 }
 
 bool
-SesameClient::set_keys(const char* pk_str, const char* secret_str) {
+SesameClientCoreImpl::set_keys(const char* pk_str, const char* secret_str) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
 		return false;
@@ -94,8 +85,8 @@ SesameClient::set_keys(const char* pk_str, const char* secret_str) {
 }
 
 bool
-SesameClient::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
-                       const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
+SesameClientCoreImpl::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
+                               const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
 		return false;
@@ -104,58 +95,29 @@ SesameClient::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 }
 
 bool
-SesameClient::connect(int retry) {
+SesameClientCoreImpl::on_connected() {
 	if (!is_key_set) {
 		DEBUG_PRINTLN("Keys not set");
 		return false;
 	}
-	if (!blec) {
-		blec = NimBLEDevice::createClient();
-		blec->setClientCallbacks(this, false);
-	}
-	blec->setConnectTimeout(connect_timeout);
-	for (int t = 0; t < 100; t++) {
-		if (blec->connect(address)) {
-			break;
-		}
-		if (retry <= 0 || t >= retry) {
-			DEBUG_PRINTF("BLE connect failed (retry=%d)\n", retry);
-			return false;
-		}
-		delay(500);
-	}
-	auto srv = blec->getService(Sesame::SESAME3_SRV_UUID);
-	if (srv && (tx = srv->getCharacteristic(TxUUID)) && (rx = srv->getCharacteristic(RxUUID))) {
-		if (rx->subscribe(
-		        true,
-		        [this](NimBLERemoteCharacteristic* ch, uint8_t* data, size_t size, bool isNotify) {
-			        notify_cb(ch, reinterpret_cast<std::byte*>(data), size, isNotify);
-		        },
-		        true)) {
-			update_state(state_t::connected);
-			return true;
-		} else {
-			DEBUG_PRINTLN("Failed to subscribe RX char");
-		}
-	} else {
-		DEBUG_PRINTLN("The device does not have TX or RX chars");
-	}
-	disconnect();
-	return false;
+	update_state(state_t::connected);
+	return true;
 }
 
 void
-SesameClient::update_state(state_t new_state) {
+SesameClientCoreImpl::update_state(state_t new_state) {
 	if (state.exchange(new_state) == new_state) {
 		return;
 	}
 	if (state_callback) {
-		state_callback(*this, new_state);
+		state_callback(*core, new_state);
 	}
 }
 
 bool
-SesameClient::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted) {
+SesameClientCoreImpl::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted) {
+	auto s = util::bin2hex(pkt, pkt_size);
+	DEBUG_PRINTF("core::send_data len=%u %x %x\n", pkt_size, pkt, s.c_str());
 	std::array<std::byte, 1 + FRAGMENT_SIZE> fragment;  // 1 for header
 	int pos = 0;
 	for (size_t remain = pkt_size; remain > 0;) {
@@ -167,7 +129,7 @@ SesameClient::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted) {
 		    std::byte{0}}.value;
 		size_t ssz = std::min(remain, FRAGMENT_SIZE);
 		std::copy(pkt + pos, pkt + pos + ssz, &fragment[1]);
-		if (!tx->writeValue(to_cptr(fragment), ssz + 1, false)) {
+		if (!backend->write_to_tx(to_cptr(fragment), ssz + 1)) {
 			DEBUG_PRINTLN("Failed to send data to the device");
 			return false;
 		}
@@ -178,7 +140,7 @@ SesameClient::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted) {
 }
 
 bool
-SesameClient::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+SesameClientCoreImpl::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
 	if (in_len < CMAC_TAG_SIZE || out_size < in_len - CMAC_TAG_SIZE) {
 		return false;
 	}
@@ -194,7 +156,7 @@ SesameClient::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t
 }
 
 bool
-SesameClient::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+SesameClientCoreImpl::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
 	if (out_size < in_len + CMAC_TAG_SIZE) {
 		return false;
 	}
@@ -209,8 +171,9 @@ SesameClient::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t
 }
 
 void
-SesameClient::notify_cb(NimBLERemoteCharacteristic* ch, const std::byte* p, size_t len, bool is_notify) {
-	if (!is_notify || len <= 1) {
+SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
+	DEBUG_PRINTF("on_rec %s\n", util::bin2hex(p, len).c_str());
+	if (len <= 1) {
 		return;
 	}
 	packet_header_t h;
@@ -220,7 +183,7 @@ SesameClient::notify_cb(NimBLERemoteCharacteristic* ch, const std::byte* p, size
 		recv_size = 0;
 	}
 	if (skipping) {
-		if (h.kind == SesameClient::packet_kind_t::encrypted) {
+		if (h.kind == SesameClientCoreImpl::packet_kind_t::encrypted) {
 			handler->update_dec_iv();
 		}
 		return;
@@ -228,7 +191,7 @@ SesameClient::notify_cb(NimBLERemoteCharacteristic* ch, const std::byte* p, size
 	if (recv_size + len - 1 > MAX_RECV) {
 		DEBUG_PRINTLN("Received data too long, skipping");
 		skipping = true;
-		if (h.kind == SesameClient::packet_kind_t::encrypted) {
+		if (h.kind == SesameClientCoreImpl::packet_kind_t::encrypted) {
 			handler->update_dec_iv();
 		}
 		return;
@@ -303,32 +266,32 @@ SesameClient::notify_cb(NimBLERemoteCharacteristic* ch, const std::byte* p, size
 }
 
 void
-SesameClient::handle_publish_initial() {
+SesameClientCoreImpl::handle_publish_initial() {
 	handler->handle_publish_initial(&recv_buffer[sizeof(Sesame::message_header_t)], recv_size - sizeof(Sesame::message_header_t));
 	return;
 }
 
 void
-SesameClient::handle_response_login() {
+SesameClientCoreImpl::handle_response_login() {
 	handler->handle_response_login(&recv_buffer[sizeof(Sesame::message_header_t)], recv_size - sizeof(Sesame::message_header_t));
 	return;
 }
 
 bool
-SesameClient::request_history() {
+SesameClientCoreImpl::request_history() {
 	std::byte flag{0};
 	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::history, &flag, sizeof(flag), true);
 }
 
 void
-SesameClient::fire_history_callback(const History& history) {
+SesameClientCoreImpl::fire_history_callback(const History& history) {
 	if (history_callback) {
-		history_callback(*this, history);
+		history_callback(*core, history);
 	}
 }
 
 bool
-SesameClient::send_cmd_with_tag(Sesame::item_code_t code, const char* tag) {
+SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, const char* tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
 	if (tag) {
 		tagchars[0] = util::truncate_utf8(tag, handler->get_max_history_tag_size());
@@ -339,7 +302,7 @@ SesameClient::send_cmd_with_tag(Sesame::item_code_t code, const char* tag) {
 }
 
 bool
-SesameClient::unlock(const char* tag) {
+SesameClientCoreImpl::unlock(const char* tag) {
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
 		return false;
@@ -348,7 +311,7 @@ SesameClient::unlock(const char* tag) {
 }
 
 bool
-SesameClient::lock(const char* tag) {
+SesameClientCoreImpl::lock(const char* tag) {
 	if (model == Sesame::model_t::sesame_cycle) {
 		DEBUG_PRINTLN("SESAME Cycle do not support locking");
 		return false;
@@ -361,7 +324,7 @@ SesameClient::lock(const char* tag) {
 }
 
 bool
-SesameClient::click(const char* tag) {
+SesameClientCoreImpl::click(const char* tag) {
 	if (model != Sesame::model_t::sesame_bot) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;
@@ -374,60 +337,33 @@ SesameClient::click(const char* tag) {
 }
 
 void
-SesameClient::handle_publish_mecha_setting() {
+SesameClientCoreImpl::handle_publish_mecha_setting() {
 	handler->handle_publish_mecha_setting(&recv_buffer[sizeof(Sesame::message_header_t)],
 	                                      recv_size - sizeof(Sesame::message_header_t));
 	return;
 }
 
 void
-SesameClient::handle_publish_mecha_status() {
+SesameClientCoreImpl::handle_publish_mecha_status() {
 	handler->handle_publish_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
 	                                     recv_size - sizeof(Sesame::message_header_t));
 	return;
 }
 
 void
-SesameClient::fire_status_callback() {
+SesameClientCoreImpl::fire_status_callback() {
 	if (lock_status_callback) {
-		lock_status_callback(*this, sesame_status);
+		lock_status_callback(*core, sesame_status);
 	}
 }
 
 void
-SesameClient::set_status_callback(status_callback_t callback) {
-	lock_status_callback = callback;
-}
-
-void
-SesameClient::set_state_callback(state_callback_t callback) {
-	state_callback = callback;
-}
-
-void
-SesameClient::onDisconnect(NimBLEClient* pClient) {
+SesameClientCoreImpl::on_disconnected() {
 	if (state.load() != state_t::idle) {
 		DEBUG_PRINTLN("Bluetooth disconnected by peer");
-		disconnect();
+		reset_session();
+		update_state(state_t::idle);
 	}
 }
 
-float
-SesameClient::Status::voltage_to_pct(float voltage) {
-	if (voltage >= batt_tbl[0].voltage) {
-		return batt_tbl[0].pct;
-	}
-	if (voltage <= batt_tbl[std::size(batt_tbl) - 1].voltage) {
-		return batt_tbl[std::size(batt_tbl) - 1].pct;
-	}
-	for (auto i = 1; i < std::size(batt_tbl); i++) {
-		if (voltage >= batt_tbl[i].voltage) {
-			return (voltage - batt_tbl[i].voltage) / (batt_tbl[i - 1].voltage - batt_tbl[i].voltage) *
-			           (batt_tbl[i - 1].pct - batt_tbl[i].pct) +
-			       batt_tbl[i].pct;
-		}
-	}
-	return 0.0f;  // Never reach
-}
-
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

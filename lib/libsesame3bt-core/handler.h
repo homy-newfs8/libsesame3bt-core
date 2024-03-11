@@ -2,16 +2,16 @@
 #include <array>
 #include <cstdint>
 #include <variant>
-#include "Sesame.h"
+#include "libsesame3bt/Sesame.h"
 #include "os2.h"
 #include "os3.h"
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
 class Handler {
  public:
 	template <typename T>
-	Handler(std::in_place_type_t<T> t, SesameClient* client) : handler(t, client) {}
+	Handler(std::in_place_type_t<T> t, SesameClientCoreImpl* client) : handler(t, client) {}
 	bool init() {
 		return std::visit([](auto& v) { return v.init(); }, handler);
 	}
@@ -66,4 +66,4 @@ class Handler {
 	std::variant<OS3Handler, OS2Handler> handler;
 };
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core
