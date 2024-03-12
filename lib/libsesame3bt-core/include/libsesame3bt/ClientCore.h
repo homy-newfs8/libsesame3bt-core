@@ -171,9 +171,25 @@ struct History {
 	char tag[Sesame::MAX_HISTORY_TAG_SIZE + 1];
 };
 
+/**
+ * @brief BLE communication backend interface
+ *
+ */
 class SesameClientBackend {
  public:
+	/**
+	 * @brief Send data to SESAME Tx characteristic
+	 *
+	 * @param data data to send
+	 * @param size size of data
+	 * @return true Success
+	 * @return false Failure
+	 */
 	virtual bool write_to_tx(const uint8_t* data, size_t size) = 0;
+	/**
+	 * @brief Disconnect BLE connection
+	 *
+	 */
 	virtual void disconnect() = 0;
 };
 
@@ -190,7 +206,7 @@ class SesameClientCore {
 	using state_callback_t = std::function<void(SesameClientCore& client, state_t state)>;
 	using history_callback_t = std::function<void(SesameClientCore& client, const History& history)>;
 
-	SesameClientCore(SesameClientBackend*);
+	SesameClientCore(SesameClientBackend&);
 	SesameClientCore(const SesameClientCore&) = delete;
 	SesameClientCore& operator=(const SesameClientCore&) = delete;
 	virtual ~SesameClientCore();

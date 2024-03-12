@@ -1,7 +1,7 @@
 #pragma once
-#include <libsesame3bt/Sesame.h>
 #include <string_view>
 #include <tuple>
+#include "Sesame.h"
 
 namespace libsesame3bt::core {
 

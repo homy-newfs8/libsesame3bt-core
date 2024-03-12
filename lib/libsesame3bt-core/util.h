@@ -1,11 +1,11 @@
 #pragma once
-#include <Arduino.h>
+#include <array>
 #include <cstddef>
 #include <cstring>
 #include <iterator>
 #include <string>
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 namespace util {
 
 size_t truncate_utf8(const char* str, size_t limit);
@@ -58,5 +58,11 @@ to_cptr(const std::byte* p) {
 	return reinterpret_cast<const uint8_t*>(p);
 }
 
+template <typename T>
+static inline constexpr std::byte
+to_byte(T v) {
+	return std::byte{static_cast<uint8_t>(v)};
+}
+
 }  // namespace util
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

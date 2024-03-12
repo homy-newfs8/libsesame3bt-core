@@ -1,9 +1,9 @@
-#include "libsesame3bt/core.h"
 #include "SesameClientCoreImpl.h"
+#include "libsesame3bt/ClientCore.h"
 
 namespace libsesame3bt::core {
 
-SesameClientCore::SesameClientCore(SesameClientBackend* backend) : impl(std::make_unique<SesameClientCoreImpl>(backend)) {}
+SesameClientCore::SesameClientCore(SesameClientBackend& backend) : impl(std::make_unique<SesameClientCoreImpl>(backend, *this)) {}
 
 SesameClientCore::~SesameClientCore() {}
 

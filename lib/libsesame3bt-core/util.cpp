@@ -1,7 +1,7 @@
 #include "util.h"
 #include <cstring>
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 namespace util {
 
 size_t
@@ -103,4 +103,4 @@ bin2hex(const std::byte* data, size_t data_size, bool upper) {
 }
 
 }  // namespace util
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

@@ -1,6 +1,6 @@
 #pragma once
 
-#if LIBSESAME3BT_DEBUG
+#if LIBSESAME3BTCORE_DEBUG
 #include <Arduino.h>
 #define DEBUG_PRINTLN(str) \
 	do {                     \

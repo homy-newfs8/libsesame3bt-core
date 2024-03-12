@@ -2,7 +2,7 @@
 #include <array>
 #include <cstdint>
 #include <variant>
-#include "libsesame3bt/Sesame.h"
+#include "Sesame.h"
 #include "os2.h"
 #include "os3.h"
 

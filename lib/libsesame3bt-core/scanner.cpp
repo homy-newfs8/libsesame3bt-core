@@ -1,10 +1,10 @@
-#include "libsesame3bt/scanner.h"
 #include <mbedtls/base64.h>
-#include "libsesame3bt/Sesame.h"
+#include "Sesame.h"
+#include "libsesame3bt/ScannerCore.h"
 #include "util.h"
 
-#ifndef LIBSESAME3BT_DEBUG
-#define LIBSESAME3BT_DEBUG 0
+#ifndef LIBSESAME3BTCORE_DEBUG
+#define LIBSESAME3BTCORE_DEBUG 0
 #endif
 #include "debug.h"
 

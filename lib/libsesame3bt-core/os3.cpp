@@ -1,12 +1,12 @@
 #include "os3.h"
 #include <mbedtls/cmac.h>
+#include "Sesame.h"
 #include "SesameClientCoreImpl.h"
-#include "libsesame3bt/Sesame.h"
-#include "libsesame3bt/core.h"
+#include "libsesame3bt/ClientCore.h"
 #include "util.h"
 
-#ifndef LIBSESAME3BT_DEBUG
-#define LIBSESAME3BT_DEBUG 0
+#ifndef LIBSESAME3BTCORE_DEBUG
+#define LIBSESAME3BTCORE_DEBUG 0
 #endif
 #include "debug.h"
 
@@ -18,6 +18,7 @@ constexpr size_t IV_COUNTER_SIZE = 5;
 
 }
 
+using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
@@ -56,13 +57,13 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 	std::byte pkt[pkt_size];
 	if (is_crypted) {
 		std::byte plain[1 + data_size];
-		plain[0] = std::byte{item_code};
+		plain[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[1]);
 		if (!client->encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
 			return false;
 		}
 	} else {
-		pkt[0] = std::byte{item_code};
+		pkt[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &pkt[1]);
 	}
 

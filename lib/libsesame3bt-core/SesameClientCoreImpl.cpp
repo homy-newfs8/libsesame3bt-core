@@ -2,12 +2,12 @@
 #include <mbedtls/cmac.h>
 #include <mbedtls/ecdh.h>
 #include <cinttypes>
-#include "libsesame3bt/core.h"
+#include "libsesame3bt/ClientCore.h"
 #include "os2.h"
 #include "util.h"
 
-#ifndef LIBSESAME3BT_DEBUG
-#define LIBSESAME3BT_DEBUG 1
+#ifndef LIBSESAME3BTCORE_DEBUG
+#define LIBSESAME3BTCORE_DEBUG 0
 #endif
 #include "debug.h"
 
@@ -31,7 +31,7 @@ using util::to_ptr;
 
 using state_t = SesameClientCore::state_t;
 
-SesameClientCoreImpl::SesameClientCoreImpl(SesameClientBackend* backend) : backend(backend) {}
+SesameClientCoreImpl::SesameClientCoreImpl(SesameClientBackend& backend, SesameClientCore& core) : backend(backend), core(core) {}
 
 SesameClientCoreImpl::~SesameClientCoreImpl() {}
 
@@ -43,9 +43,7 @@ SesameClientCoreImpl::reset_session() {
 
 void
 SesameClientCoreImpl::disconnect() {
-	if (backend) {
-		backend->disconnect();
-	}
+	backend.disconnect();
 	reset_session();
 	update_state(state_t::idle);
 }
@@ -110,14 +108,12 @@ SesameClientCoreImpl::update_state(state_t new_state) {
 		return;
 	}
 	if (state_callback) {
-		state_callback(*core, new_state);
+		state_callback(core, new_state);
 	}
 }
 
 bool
 SesameClientCoreImpl::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted) {
-	auto s = util::bin2hex(pkt, pkt_size);
-	DEBUG_PRINTF("core::send_data len=%u %x %x\n", pkt_size, pkt, s.c_str());
 	std::array<std::byte, 1 + FRAGMENT_SIZE> fragment;  // 1 for header
 	int pos = 0;
 	for (size_t remain = pkt_size; remain > 0;) {
@@ -129,7 +125,7 @@ SesameClientCoreImpl::send_data(std::byte* pkt, size_t pkt_size, bool is_crypted
 		    std::byte{0}}.value;
 		size_t ssz = std::min(remain, FRAGMENT_SIZE);
 		std::copy(pkt + pos, pkt + pos + ssz, &fragment[1]);
-		if (!backend->write_to_tx(to_cptr(fragment), ssz + 1)) {
+		if (!backend.write_to_tx(to_cptr(fragment), ssz + 1)) {
 			DEBUG_PRINTLN("Failed to send data to the device");
 			return false;
 		}
@@ -172,7 +168,6 @@ SesameClientCoreImpl::encrypt(const std::byte* in, size_t in_len, std::byte* out
 
 void
 SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
-	DEBUG_PRINTF("on_rec %s\n", util::bin2hex(p, len).c_str());
 	if (len <= 1) {
 		return;
 	}
@@ -286,7 +281,7 @@ SesameClientCoreImpl::request_history() {
 void
 SesameClientCoreImpl::fire_history_callback(const History& history) {
 	if (history_callback) {
-		history_callback(*core, history);
+		history_callback(core, history);
 	}
 }
 
@@ -353,7 +348,7 @@ SesameClientCoreImpl::handle_publish_mecha_status() {
 void
 SesameClientCoreImpl::fire_status_callback() {
 	if (lock_status_callback) {
-		lock_status_callback(*core, sesame_status);
+		lock_status_callback(core, sesame_status);
 	}
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-namespace libsesame3bt {
+namespace libsesame3bt::core {
 
 template <typename T>
 class api_wrapper {
@@ -26,4 +26,4 @@ class api_wrapper {
 	fun _free_fn;
 };
 
-}  // namespace libsesame3bt
+}  // namespace libsesame3bt::core

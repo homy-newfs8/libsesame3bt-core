@@ -6,10 +6,10 @@
 #include <cstddef>
 #include <ctime>
 #include <utility>
+#include "Sesame.h"
 #include "api_wrapper.h"
 #include "handler.h"
-#include "libsesame3bt/Sesame.h"
-#include "libsesame3bt/core.h"
+#include "libsesame3bt/ClientCore.h"
 
 namespace libsesame3bt::core {
 
@@ -23,7 +23,7 @@ class SesameClientCoreImpl {
 	static constexpr size_t MAX_CMD_TAG_SIZE_OS3 = 29;
 	static constexpr size_t MAX_HISTORY_TAG_SIZE = std::max(MAX_CMD_TAG_SIZE_OS2, MAX_CMD_TAG_SIZE_OS3);
 
-	SesameClientCoreImpl(SesameClientBackend*);
+	SesameClientCoreImpl(SesameClientBackend& backend, SesameClientCore& core);
 	SesameClientCoreImpl(const SesameClientCoreImpl&) = delete;
 	SesameClientCoreImpl& operator=(const SesameClientCoreImpl&) = delete;
 	virtual ~SesameClientCoreImpl();
@@ -57,8 +57,6 @@ class SesameClientCoreImpl {
 	friend class OS2Handler;
 	friend class OS3Handler;
 	static constexpr size_t MAX_RECV = 128;
-	SesameClientBackend* backend;
-	SesameClientCore* core;
 
 	enum packet_kind_t { not_finished = 0, plain = 1, encrypted = 2 };  // do not use enum class to avoid warning in structure below.
 	union __attribute__((packed)) packet_header_t {
@@ -89,6 +87,9 @@ class SesameClientCoreImpl {
 
 	bool is_key_set = false;
 	bool is_key_shared = false;
+
+	SesameClientBackend& backend;
+	SesameClientCore& core;
 
 	void reset_session();
 	bool send_data(std::byte* pkt, size_t pkt_size, bool is_crypted);
