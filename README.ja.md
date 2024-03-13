@@ -2,7 +2,7 @@
 SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのライブラリ
 
 ## 概要
-このライブラリはBluetooth LE接続で[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。本ライブラリはSESAMEのメッセージ処理部分のみが含まれています。
+このライブラリはBluetooth LE接続で[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。本ライブラリはSESAMEのメッセージ処理部分のみが含まれています。本ライブラリは[Mbed TLS](https://github.com/Mbed-TLS/mbedtls)に依存しています。
 
 実行する環境に合わせてフレームワークやBLEライブラリを組み合わせることが可能です。
 

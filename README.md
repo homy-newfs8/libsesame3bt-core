@@ -3,9 +3,29 @@ Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME 4 /
 
 # Usage
 This library contains the message processing part. BLE connections must be handled outside of this library.
+
+1. Prepare a callback object inherited from `SesameClientBackend`
+1. Create `SesameClientCore` instance.
+1. Initialize with `SesameClientCore::begin()` and `SesameClientCore::set_key()`.
+1. Connect to SESAME by any BLE API (use BLE MAC Address of SESAME).
+1. Prepare to access service (UUID=`Sesame::SESAME3_SRV_UUID`).
+1. Prepare to send data to Tx characteristic in above service (UUID=`Sesame::TxUUID`).
+1. Prepare to receive notification from Rx characteristic (UUID=`Sesame::RxUUID`).
+1. Call `SesameClientCore::on_connected()`
+1. When `SesameClientBackend::write_to_tx()` is called, send the data to above Tx characteristic.
+1. When `SesameClientBackend::disconnect()` is called, disconnect from SESAME.
+1. When notification received from above Rx characteristic, call `SesameClientCore::on_received()` with the notification data.
+1. When disconnected from SESAME, call `SesameClientCore::on_disconnected()`.
+
+# Dependency
+- [Mbed TLS](https://github.com/Mbed-TLS/mbedtls).
+
+# Integrated library example
 [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt) is a library that integrates this library with the ESP32 / Android / NimBLE libraries.
 
-With libsesame3, you can control SESAME as follows.
+With [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt), you can control SESAME as follows.
+
+platformmio.ini
 ```ini
 [env]
 platform = espressif32
