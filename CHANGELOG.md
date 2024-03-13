@@ -1,6 +1,10 @@
 # Changelog
 
-# [v0.1.0] 2024-03-12
+## [v0.1.1] 2024-03-13
+
+- Update README and source comment.
+
+## [v0.1.0] 2024-03-12
 
 ### Major changes
 
