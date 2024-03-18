@@ -193,6 +193,8 @@ class SesameClientBackend {
 	virtual void disconnect() = 0;
 };
 
+enum class state_t : uint8_t { idle, connected, authenticating, active };
+
 class SesameClientCoreImpl;
 /**
  * @brief Sesame client
@@ -200,8 +202,6 @@ class SesameClientCoreImpl;
  */
 class SesameClientCore {
  public:
-	enum class state_t : uint8_t { idle, connected, authenticating, active };
-
 	using status_callback_t = std::function<void(SesameClientCore& client, Status status)>;
 	using state_callback_t = std::function<void(SesameClientCore& client, state_t state)>;
 	using history_callback_t = std::function<void(SesameClientCore& client, const History& history)>;

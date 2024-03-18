@@ -29,8 +29,6 @@ constexpr size_t IV_COUNTER_SIZE = 5;
 using util::to_cptr;
 using util::to_ptr;
 
-using state_t = SesameClientCore::state_t;
-
 SesameClientCoreImpl::SesameClientCoreImpl(SesameClientBackend& backend, SesameClientCore& core) : backend(backend), core(core) {}
 
 SesameClientCoreImpl::~SesameClientCoreImpl() {}

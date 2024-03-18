@@ -159,7 +159,7 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	                    std::copy(bpk.begin() + 1, bpk.end(), std::copy(sesame_ki.cbegin(), sesame_ki.cend(), resp.begin()))));
 
 	if (send_command(Sesame::op_code_t::sync, Sesame::item_code_t::login, resp.data(), resp.size(), false)) {
-		client->update_state(SesameClientCore::state_t::authenticating);
+		client->update_state(state_t::authenticating);
 	} else {
 		client->disconnect();
 	}
@@ -184,7 +184,7 @@ OS2Handler::handle_response_login(const std::byte* in, size_t in_len) {
 		client->setting.emplace<LockSetting>(msg->mecha_setting);
 	}
 	update_sesame_status(msg->mecha_status);
-	client->update_state(SesameClientCore::state_t::active);
+	client->update_state(state_t::active);
 	client->fire_status_callback();
 }
 

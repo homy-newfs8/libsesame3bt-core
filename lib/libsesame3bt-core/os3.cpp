@@ -126,7 +126,7 @@ OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	client->is_key_shared = true;
 	init_endec_iv(msg->token);
 	if (send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false)) {
-		client->update_state(SesameClientCore::state_t::authenticating);
+		client->update_state(state_t::authenticating);
 	} else {
 		client->disconnect();
 	}
@@ -162,8 +162,8 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
 	client->setting.emplace<LockSetting>(msg->setting);
 	setting_received = true;
-	if (client->state != SesameClientCore::state_t::active && setting_received && status_received) {
-		client->update_state(SesameClientCore::state_t::active);
+	if (client->state != state_t::active && setting_received && status_received) {
+		client->update_state(state_t::active);
 	}
 }
 
@@ -177,8 +177,8 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	client->sesame_status = {msg->status, voltage_scale(client->model)};
 	client->fire_status_callback();
 	status_received = true;
-	if (client->state != SesameClientCore::state_t::active && setting_received && status_received) {
-		client->update_state(SesameClientCore::state_t::active);
+	if (client->state != state_t::active && setting_received && status_received) {
+		client->update_state(state_t::active);
 	}
 }
 

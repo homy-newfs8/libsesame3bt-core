@@ -44,12 +44,12 @@ class SesameClientCoreImpl {
 	 */
 	bool click(const char* tag);
 	bool request_history();
-	bool is_session_active() const { return state.load() == SesameClientCore::state_t::active; }
+	bool is_session_active() const { return state.load() == state_t::active; }
 	void set_status_callback(SesameClientCore::status_callback_t callback) { lock_status_callback = callback; }
 	void set_state_callback(SesameClientCore::state_callback_t callback) { state_callback = callback; }
 	void set_history_callback(SesameClientCore::history_callback_t callback) { history_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
-	SesameClientCore::state_t get_state() const { return state.load(); }
+	state_t get_state() const { return state.load(); }
 	const std::variant<LockSetting, BotSetting>& get_setting() const { return setting; }
 	void disconnect();
 
@@ -74,7 +74,7 @@ class SesameClientCoreImpl {
 	std::array<std::byte, 13> enc_iv;
 	std::array<std::byte, 13> dec_iv;
 	std::array<std::byte, MAX_RECV> recv_buffer;
-	std::atomic<SesameClientCore::state_t> state{SesameClientCore::state_t::idle};
+	std::atomic<state_t> state{state_t::idle};
 	size_t recv_size = 0;
 	bool skipping = false;
 	std::variant<LockSetting, BotSetting> setting;
@@ -100,7 +100,7 @@ class SesameClientCoreImpl {
 	void handle_publish_mecha_status();
 	void handle_response_login();
 	void fire_status_callback();
-	void update_state(SesameClientCore::state_t new_state);
+	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
 	bool send_cmd_with_tag(Sesame::item_code_t code, const char* tag);
 

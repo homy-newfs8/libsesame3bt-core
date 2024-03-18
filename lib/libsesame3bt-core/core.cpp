@@ -180,9 +180,9 @@ SesameClientCore::get_model() const {
 /**
  * @brief Get library state.
  *
- * @return SesameClientCore::state_t
+ * @return state_t
  */
-SesameClientCore::state_t
+state_t
 SesameClientCore::get_state() const {
 	return impl->get_state();
 }
