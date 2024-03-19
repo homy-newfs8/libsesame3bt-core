@@ -45,9 +45,9 @@ class SesameClientCoreImpl {
 	bool click(const char* tag);
 	bool request_history();
 	bool is_session_active() const { return state.load() == state_t::active; }
-	void set_status_callback(SesameClientCore::status_callback_t callback) { lock_status_callback = callback; }
-	void set_state_callback(SesameClientCore::state_callback_t callback) { state_callback = callback; }
-	void set_history_callback(SesameClientCore::history_callback_t callback) { history_callback = callback; }
+	void set_status_callback(status_callback_t callback) { lock_status_callback = callback; }
+	void set_state_callback(state_callback_t callback) { state_callback = callback; }
+	void set_history_callback(history_callback_t callback) { history_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
 	const std::variant<LockSetting, BotSetting>& get_setting() const { return setting; }
@@ -79,9 +79,9 @@ class SesameClientCoreImpl {
 	bool skipping = false;
 	std::variant<LockSetting, BotSetting> setting;
 	Status sesame_status;
-	SesameClientCore::status_callback_t lock_status_callback{};
-	SesameClientCore::state_callback_t state_callback{};
-	SesameClientCore::history_callback_t history_callback{};
+	status_callback_t lock_status_callback{};
+	state_callback_t state_callback{};
+	history_callback_t history_callback{};
 	Sesame::model_t model;
 	std::optional<Handler> handler;
 

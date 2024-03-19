@@ -143,7 +143,7 @@ SesameClientCore::is_session_active() const {
  * @param callback
  */
 void
-SesameClientCore::set_status_callback(SesameClientCore::status_callback_t callback) {
+SesameClientCore::set_status_callback(status_callback_t callback) {
 	impl->set_status_callback(callback);
 }
 
@@ -153,7 +153,7 @@ SesameClientCore::set_status_callback(SesameClientCore::status_callback_t callba
  * @param callback
  */
 void
-SesameClientCore::set_state_callback(SesameClientCore::state_callback_t callback) {
+SesameClientCore::set_state_callback(state_callback_t callback) {
 	impl->set_state_callback(callback);
 }
 
@@ -163,7 +163,7 @@ SesameClientCore::set_state_callback(SesameClientCore::state_callback_t callback
  * @param callback
  */
 void
-SesameClientCore::set_history_callback(SesameClientCore::history_callback_t callback) {
+SesameClientCore::set_history_callback(history_callback_t callback) {
 	impl->set_history_callback(callback);
 }
 
