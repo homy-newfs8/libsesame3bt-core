@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cstddef>
 #include <ctime>
+#include <optional>
 #include <utility>
 #include "Sesame.h"
 #include "api_wrapper.h"

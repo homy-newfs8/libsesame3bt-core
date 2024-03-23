@@ -20,6 +20,8 @@ This library contains the message processing part. BLE connections must be handl
 # Dependency
 - [Mbed TLS](https://github.com/Mbed-TLS/mbedtls).
 
+If your execution environment includes Mbed TLS's CMAC functions, define USE_FRAMEWORK_MBEDTLS_CMAC at compile time.
+
 # Integrated library example
 [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt) is a library that integrates this library with the ESP32 / Android / NimBLE libraries.
 
