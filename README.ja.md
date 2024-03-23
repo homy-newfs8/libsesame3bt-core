@@ -32,7 +32,7 @@ SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのラ�
 - [M5Atom Lite](https://docs.m5stack.com/en/core/atom_lite)
 
 ## 使用方法
-- 本ライブラリは開発環境[PlatformIO](https://platformio.org/)での利用を前提としています。動作に必要となる外部ライブラリ等については[library.json](library.json)に記述してあります。
+- 本ライブラリは開発環境[PlatformIO](https://platformio.org/)での利用を前提としています。本ライブラリを利用するプロジェクトのlib_depsに本リポジトリのURL等を指定して組込み可能です。
 - C++17コンパイラの使用が前提となっています。PlatformIO上のESP32向け開発でC++17コンパイラを利用可能にする方法については、`platformio.ini`の`build_flags`と`build_unflags`の`-std`オプションを参照してください。
 
 ## 関連リポジトリ
@@ -45,7 +45,7 @@ libsesame3btを使ったアプリケーションサンプル
 
 ## 制限事項
 - 本ライブラリはSESAMEデバイスの初期設定を行うことができません。公式アプリで初期設定済みのSESAMEのみ制御可能です。
-- ライブラリのドキュメントはありません。[libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)のソース、サンプルアプリである[ESP32Sesame3App](https://github.com/homy-newfs8/ESP32Sesame3App)、本ライブラリ自体のソースコードを参照願います。
+- ライブラリのドキュメントはありません。利用方法の概要は英語版READMEのUsageセクションに書いてあります。また[libsesame3bt](https://github.com/homy-newfs8/libsesame3bt)のソース、サンプルアプリである[ESP32Sesame3App](https://github.com/homy-newfs8/ESP32Sesame3App)、本ライブラリ自体のソースコードを参照願います。
 
 ## 謝辞
 

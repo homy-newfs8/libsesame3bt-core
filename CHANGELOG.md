@@ -1,8 +1,8 @@
 # Changelog
 
-## [v0.2.0] 2024-03-xx
+## [v0.2.0] 2024-03-23
 
-- Ignore "initial" packets during authentication.
+- Ignore duplicate "initial" packets during authentication.
 
 ## [v0.1.1] 2024-03-13
 

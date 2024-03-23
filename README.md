@@ -12,7 +12,7 @@ This library contains the message processing part. BLE connections must be handl
 1. Prepare to send data to Tx characteristic in above service (UUID=`Sesame::TxUUID`).
 1. Prepare to receive notification from Rx characteristic (UUID=`Sesame::RxUUID`).
 1. Call `SesameClientCore::on_connected()`
-1. When `SesameClientBackend::write_to_tx()` is called, send the data to above Tx characteristic.
+1. When `SesameClientBackend::write_to_tx()` is called, send the data to above Tx characteristic(w/o request response).
 1. When `SesameClientBackend::disconnect()` is called, disconnect from SESAME.
 1. When notification received from above Rx characteristic, call `SesameClientCore::on_received()` with the notification data.
 1. When disconnected from SESAME, call `SesameClientCore::on_disconnected()`.
