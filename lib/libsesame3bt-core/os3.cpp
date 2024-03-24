@@ -23,7 +23,7 @@ using util::to_cptr;
 using util::to_ptr;
 
 bool
-OS3Handler::set_keys(const char* pk_str, const char* secret_str) {
+OS3Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	if (secret_str == nullptr) {
 		DEBUG_PRINTLN("secret_str must be specified");
 		return false;
@@ -219,9 +219,9 @@ OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 			}
 		}
 		tag_len = std::min<uint8_t>(tag_len, get_max_history_tag_size());
-		const char* tag_str = tag_data + 1;
-		history.tag_len = util::cleanup_tail_utf8(tag_str, tag_len);
-		*std::copy(tag_str, tag_str + history.tag_len, history.tag) = 0;
+		auto tag_str = util::cleanup_tail_utf8({tag_data + 1, tag_len});
+		history.tag_len = tag_str.length();
+		*std::copy(std::begin(tag_str), std::end(tag_str), history.tag) = 0;
 	} else {
 		history.tag_len = 0;
 		history.tag[0] = 0;

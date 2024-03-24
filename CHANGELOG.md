@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.3.0] 2024-03-24
+
+- Make some interface accept std::string_view instead of const char *
+
 ## [v0.2.0] 2024-03-23
 
 - Ignore duplicate "initial" packets during authentication.

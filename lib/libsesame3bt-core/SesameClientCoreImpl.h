@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <ctime>
 #include <optional>
+#include <string_view>
 #include <utility>
 #include "Sesame.h"
 #include "api_wrapper.h"
@@ -31,19 +32,19 @@ class SesameClientCoreImpl {
 	bool begin(Sesame::model_t model);
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
-	bool set_keys(const char* pk_str, const char* secret_str);
+	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool on_connected();
 	void on_received(const std::byte*, size_t);
 	void on_disconnected();
-	bool unlock(const char* tag);
-	bool lock(const char* tag);
+	bool unlock(std::string_view tag);
+	bool lock(std::string_view tag);
 	/**
 	 * @brief Click operation (for Bot only)
 	 *
 	 * @param tag %History tag (But it seems not recorded in bot)
 	 * @return True if the command sent successfully
 	 */
-	bool click(const char* tag);
+	bool click(std::string_view tag);
 	bool request_history();
 	bool is_session_active() const { return state.load() == state_t::active; }
 	void set_status_callback(status_callback_t callback) { lock_status_callback = callback; }
@@ -103,7 +104,7 @@ class SesameClientCoreImpl {
 	void fire_status_callback();
 	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
-	bool send_cmd_with_tag(Sesame::item_code_t code, const char* tag);
+	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
 
 	// NimBLEClientCallbacks
 	// virtual void onDisconnect(NimBLEClient* pClient) override;

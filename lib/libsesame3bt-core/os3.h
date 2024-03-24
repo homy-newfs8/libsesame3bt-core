@@ -14,7 +14,7 @@ class OS3Handler {
 	OS3Handler(const OS3Handler&) = delete;
 	OS3Handler& operator=(const OS3Handler&) = delete;
 	bool init() { return true; }
-	bool set_keys(const char* pk_str, const char* secret_str);
+	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
 	bool send_command(Sesame::op_code_t op_code,

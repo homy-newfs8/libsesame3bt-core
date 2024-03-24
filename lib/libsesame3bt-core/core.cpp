@@ -44,7 +44,7 @@ SesameClientCore::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_
  * @return false
  */
 bool
-SesameClientCore::set_keys(const char* pk_str, const char* secret_str) {
+SesameClientCore::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	return impl->set_keys(pk_str, secret_str);
 }
 
@@ -87,7 +87,7 @@ SesameClientCore::on_disconnected() {
  * @return false
  */
 bool
-SesameClientCore::unlock(const char* tag) {
+SesameClientCore::unlock(std::string_view tag) {
 	return impl->unlock(tag);
 }
 
@@ -99,7 +99,7 @@ SesameClientCore::unlock(const char* tag) {
  * @return false
  */
 bool
-SesameClientCore::lock(const char* tag) {
+SesameClientCore::lock(std::string_view tag) {
 	return impl->lock(tag);
 }
 
@@ -111,7 +111,7 @@ SesameClientCore::lock(const char* tag) {
  * @return false
  */
 bool
-SesameClientCore::click(const char* tag) {
+SesameClientCore::click(std::string_view tag) {
 	return impl->click(tag);
 }
 

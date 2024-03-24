@@ -1,3 +1,4 @@
+#include <Sesame.h>
 #include <libsesame3bt/ClientCore.h>
 #include <libsesame3bt/ScannerCore.h>
 

@@ -38,11 +38,7 @@ bool OS2Handler::static_initialized = [] {
 }();
 
 bool
-OS2Handler::set_keys(const char* pk_str, const char* secret_str) {
-	if (!pk_str || !secret_str) {
-		DEBUG_PRINTLN("Both pk_str and secret_str must be specified");
-		return false;
-	}
+OS2Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
 	if (!util::hex2bin(secret_str, secret)) {
 		DEBUG_PRINTLN("secret_str invalid format");
@@ -229,9 +225,9 @@ OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 			}
 		}
 		tag_len = std::min<uint8_t>(tag_len, get_max_history_tag_size());
-		const auto* tag_str = tag_data + 1;
-		history.tag_len = util::cleanup_tail_utf8(tag_str, tag_len);
-		*std::copy(tag_str, tag_str + history.tag_len, history.tag) = 0;
+		auto tag_str = util::cleanup_tail_utf8({tag_data + 1, tag_len});
+		history.tag_len = tag_str.length();
+		*std::copy(std::begin(tag_str), std::end(tag_str), history.tag) = 0;
 	} else {
 		history.tag_len = 0;
 		history.tag[0] = 0;

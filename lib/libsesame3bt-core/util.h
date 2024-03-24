@@ -4,24 +4,21 @@
 #include <cstring>
 #include <iterator>
 #include <string>
+#include <string_view>
 
 namespace libsesame3bt::core {
 namespace util {
 
-size_t truncate_utf8(const char* str, size_t limit);
-size_t truncate_utf8(const char* str, size_t len, size_t limit);
-size_t cleanup_tail_utf8(const char* str, size_t len);
-inline size_t
-cleanup_tail_utf8(const char* str) {
-	return cleanup_tail_utf8(str, std::strlen(str));
-}
+std::string_view truncate_utf8(std::string_view str, size_t limit);
+std::string_view cleanup_tail_utf8(std::string_view str);
+
 int8_t nibble(char c);
 char hexchar(int b, bool upper = false);
 
 template <size_t N>
 bool
-hex2bin(const char* str, std::array<std::byte, N>& out) {
-	if (!str || strlen(str) != N * 2) {
+hex2bin(std::string_view str, std::array<std::byte, N>& out) {
+	if (str.length() != N * 2) {
 		return false;
 	}
 	for (int i = 0; i < N; i++) {
@@ -34,6 +31,7 @@ hex2bin(const char* str, std::array<std::byte, N>& out) {
 	}
 	return true;
 }
+
 std::string bin2hex(const std::byte* data, size_t data_size, bool upper = false);
 
 template <size_t N>

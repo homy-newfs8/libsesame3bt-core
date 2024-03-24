@@ -17,7 +17,7 @@ class OS2Handler {
 	OS2Handler(const OS2Handler&) = delete;
 	OS2Handler& operator=(const OS2Handler&) = delete;
 	bool init() { return static_initialized; }
-	bool set_keys(const char* pk_str, const char* secret_str);
+	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
 	bool send_command(Sesame::op_code_t op_code,

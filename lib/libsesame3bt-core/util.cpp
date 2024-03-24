@@ -4,19 +4,13 @@
 namespace libsesame3bt::core {
 namespace util {
 
-size_t
-truncate_utf8(const char* str, size_t limit) {
-	if (!str) {
-		return 0;
+std::string_view
+truncate_utf8(std::string_view str, size_t limit) {
+	if (str.length() == 0 || limit == 0) {
+		return {str.data(), 0};
 	}
-	return truncate_utf8(str, std::strlen(str), limit);
-}
 
-size_t
-truncate_utf8(const char* str, size_t len, size_t limit) {
-	if (!str || len == 0 || limit == 0) {
-		return 0;
-	}
+	auto len = str.length();
 	if (len > limit) {
 		len = limit + 1;
 	}
@@ -26,7 +20,7 @@ truncate_utf8(const char* str, size_t len, size_t limit) {
 			len--;
 		}
 	}
-	return len;
+	return {str.data(), len};
 }
 
 static constexpr bool
@@ -34,11 +28,12 @@ utf_follow(char c) {
 	return (c & 0xc0) == 0x80;
 }
 
-size_t
-cleanup_tail_utf8(const char* str, size_t len) {
+std::string_view
+cleanup_tail_utf8(std::string_view str) {
+	size_t len = str.length();
 	for (size_t i = 0; i < len; i++) {
 		if (str[i] == 0) {
-			return i;
+			return {str.data(), i};
 		}
 		if ((str[i] & 0x80) == 0) {
 			continue;
@@ -61,9 +56,9 @@ cleanup_tail_utf8(const char* str, size_t len) {
 				continue;
 			}
 		}
-		return i;
+		return {str.data(), i};
 	}
-	return len;
+	return {str.data(), len};
 }
 
 int8_t

@@ -1,11 +1,11 @@
 #pragma once
-
 #include <array>
 #include <atomic>
 #include <cstddef>
 #include <ctime>
 #include <functional>
 #include <memory>
+#include <string_view>
 #include <variant>
 #include "Sesame.h"
 
@@ -214,16 +214,16 @@ class SesameClientCore {
 	bool begin(Sesame::model_t model);
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
-	bool set_keys(const char* pk_str, const char* secret_str);
-	bool unlock(const char* tag);
-	bool lock(const char* tag);
+	bool set_keys(std::string_view pk_str, std::string_view secret_str);
+	bool unlock(std::string_view tag);
+	bool lock(std::string_view tag);
 	/**
 	 * @brief Click operation (for Bot only)
 	 *
 	 * @param tag %History tag (But it seems not recorded in bot)
 	 * @return True if the command sent successfully
 	 */
-	bool click(const char* tag);
+	bool click(std::string_view tag);
 	bool request_history();
 	bool is_session_active() const;
 	void set_status_callback(status_callback_t callback);

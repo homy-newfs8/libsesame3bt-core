@@ -72,7 +72,7 @@ SesameClientCoreImpl::begin(Sesame::model_t model) {
 }
 
 bool
-SesameClientCoreImpl::set_keys(const char* pk_str, const char* secret_str) {
+SesameClientCoreImpl::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
 		return false;
@@ -288,18 +288,17 @@ SesameClientCoreImpl::fire_history_callback(const History& history) {
 }
 
 bool
-SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, const char* tag) {
+SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
-	if (tag) {
-		tagchars[0] = util::truncate_utf8(tag, handler->get_max_history_tag_size());
-		std::copy(tag, tag + tagchars[0], &tagchars[1]);
-	}
+	auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
+	tagchars[0] = std::size(truncated);
+	std::copy(std::begin(truncated), std::end(truncated), &tagchars[1]);
 	auto tagbytes = reinterpret_cast<std::byte*>(tagchars.data());
 	return handler->send_command(Sesame::op_code_t::async, code, tagbytes, handler->get_cmd_tag_size(tagbytes), true);
 }
 
 bool
-SesameClientCoreImpl::unlock(const char* tag) {
+SesameClientCoreImpl::unlock(std::string_view tag) {
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
 		return false;
@@ -308,7 +307,7 @@ SesameClientCoreImpl::unlock(const char* tag) {
 }
 
 bool
-SesameClientCoreImpl::lock(const char* tag) {
+SesameClientCoreImpl::lock(std::string_view tag) {
 	if (model == Sesame::model_t::sesame_cycle) {
 		DEBUG_PRINTLN("SESAME Cycle do not support locking");
 		return false;
@@ -321,7 +320,7 @@ SesameClientCoreImpl::lock(const char* tag) {
 }
 
 bool
-SesameClientCoreImpl::click(const char* tag) {
+SesameClientCoreImpl::click(std::string_view tag) {
 	if (model != Sesame::model_t::sesame_bot) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;

@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include <variant>
 #include "Sesame.h"
 #include "os2.h"
@@ -15,7 +16,7 @@ class Handler {
 	bool init() {
 		return std::visit([](auto& v) { return v.init(); }, handler);
 	}
-	bool set_keys(const char* pk_str, const char* secret_str) {
+	bool set_keys(std::string_view pk_str, std::string_view secret_str) {
 		return std::visit([pk_str, secret_str](auto& v) { return v.set_keys(pk_str, secret_str); }, handler);
 	}
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
