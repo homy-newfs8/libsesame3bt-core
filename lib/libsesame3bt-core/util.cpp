@@ -1,5 +1,4 @@
 #include "util.h"
-#include <cstring>
 
 namespace libsesame3bt::core {
 namespace util {

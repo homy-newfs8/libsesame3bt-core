@@ -24,16 +24,10 @@ using util::to_ptr;
 
 bool
 OS3Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
-	if (secret_str == nullptr) {
-		DEBUG_PRINTLN("secret_str must be specified");
-		return false;
-	}
-	std::array<std::byte, Sesame::SECRET_SIZE> secret;
-	if (!util::hex2bin(secret_str, secret)) {
+	if (!util::hex2bin(secret_str, sesame_secret)) {
 		DEBUG_PRINTLN("secret_str invalid format");
 		return false;
 	}
-	std::copy(std::cbegin(secret), std::cend(secret), std::begin(sesame_secret));
 	client->is_key_set = true;
 	return true;
 }

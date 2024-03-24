@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <cstdint>
+#include <string_view>
 #include "Sesame.h"
 #include "api_wrapper.h"
 
