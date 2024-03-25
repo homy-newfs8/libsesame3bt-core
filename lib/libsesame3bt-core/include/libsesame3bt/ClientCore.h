@@ -192,7 +192,7 @@ class SesameClientBackend {
 	virtual void disconnect() = 0;
 };
 
-enum class state_t : uint8_t { idle, connected, authenticating, active };
+enum class state_t : uint8_t { idle, authenticating, active };
 
 class SesameClientCoreImpl;
 class SesameClientCore;
@@ -232,7 +232,6 @@ class SesameClientCore {
 	state_t get_state() const;
 	const std::variant<LockSetting, BotSetting>& get_setting() const;
 
-	bool on_connected();
 	void on_received(const std::byte*, size_t);
 	void on_disconnected();
 

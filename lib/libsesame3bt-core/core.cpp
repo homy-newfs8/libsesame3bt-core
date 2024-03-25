@@ -49,17 +49,6 @@ SesameClientCore::set_keys(std::string_view pk_str, std::string_view secret_str)
 }
 
 /**
- * @brief Start initialization after connect.
- *
- * @return true
- * @return false
- */
-bool
-SesameClientCore::on_connected() {
-	return impl->on_connected();
-}
-
-/**
  * @brief Handle received notification data.
  *
  * @param data

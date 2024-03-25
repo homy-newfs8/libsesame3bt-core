@@ -90,16 +90,6 @@ SesameClientCoreImpl::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& pub
 	return handler->set_keys(public_key, secret_key);
 }
 
-bool
-SesameClientCoreImpl::on_connected() {
-	if (!is_key_set) {
-		DEBUG_PRINTLN("Keys not set");
-		return false;
-	}
-	update_state(state_t::connected);
-	return true;
-}
-
 void
 SesameClientCoreImpl::update_state(state_t new_state) {
 	if (state.exchange(new_state) == new_state) {
@@ -260,8 +250,8 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 
 void
 SesameClientCoreImpl::handle_publish_initial() {
-	if (get_state() != state_t::connected) {
-		DEBUG_PRINTLN("skip repeating initial");
+	if (get_state() == state_t::authenticating) {
+		DEBUG_PRINTLN("skipped repeating initial");
 		return;
 	}
 	handler->handle_publish_initial(&recv_buffer[sizeof(Sesame::message_header_t)], recv_size - sizeof(Sesame::message_header_t));

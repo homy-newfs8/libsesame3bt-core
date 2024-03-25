@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.4.0] 2024-03-25
+### Breaking changes
+
+- remove `state_t::connected`, normal state transitions is init -> authenticating -> active
+- remove `on_connected()`
+
 ## [v0.3.0] 2024-03-24
 
 - Make some interface accept std::string_view instead of const char *
