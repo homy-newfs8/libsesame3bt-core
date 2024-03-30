@@ -3,8 +3,7 @@
 #include <mbedtls/ecdh.h>
 #include <cinttypes>
 #include "libsesame3bt/ClientCore.h"
-#include "os2.h"
-#include "util.h"
+#include "libsesame3bt/util.h"
 
 #ifndef LIBSESAME3BTCORE_DEBUG
 #define LIBSESAME3BTCORE_DEBUG 0

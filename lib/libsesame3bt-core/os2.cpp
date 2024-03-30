@@ -4,7 +4,7 @@
 #include "Sesame.h"
 #include "SesameClientCoreImpl.h"
 #include "libsesame3bt/ClientCore.h"
-#include "util.h"
+#include "libsesame3bt/util.h"
 
 #ifndef LIBSESAME3BTCORE_DEBUG
 #define LIBSESAME3BTCORE_DEBUG 0
