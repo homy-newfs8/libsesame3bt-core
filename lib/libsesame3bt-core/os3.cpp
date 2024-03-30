@@ -80,7 +80,6 @@ OS3Handler::update_dec_iv() {
 
 void
 OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
-	DEBUG_PRINTLN("OS3 initial");
 	if (in_len < sizeof(Sesame::publish_initial_t)) {
 		DEBUG_PRINTF("%u: short response initial data\n", in_len);
 		client->disconnect();
