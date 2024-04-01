@@ -105,9 +105,6 @@ class SesameClientCoreImpl {
 	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
 	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
-
-	// NimBLEClientCallbacks
-	// virtual void onDisconnect(NimBLEClient* pClient) override;
 };
 
 }  // namespace libsesame3bt::core

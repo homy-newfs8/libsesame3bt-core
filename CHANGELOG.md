@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.5.0] 2024-04-01
+
+- Export some utility functions
+
 ## [v0.4.0] 2024-03-30
 ### Breaking changes
 
