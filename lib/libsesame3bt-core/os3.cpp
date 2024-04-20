@@ -143,7 +143,8 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	gmtime_r(&t, &tm);
 	DEBUG_PRINTF("time=%04d/%02d/%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
 	             tm.tm_sec);
-	setting_received = status_received = false;
+	setting_received = !client->has_setting();  // treat as setting received
+	status_received = false;
 }
 
 void
@@ -161,7 +162,7 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 }
 
 void
-OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
+OS3Handler::handle_mecha_status(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
 		DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored\n", in_len);
 		return;
@@ -177,7 +178,6 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 
 void
 OS3Handler::handle_history(const std::byte* in, size_t in_len) {
-	DEBUG_PRINTF("history(%u): %s\n", in_len, util::bin2hex(in, in_len).c_str());
 	History history{};
 	if (in_len < 1) {
 		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);

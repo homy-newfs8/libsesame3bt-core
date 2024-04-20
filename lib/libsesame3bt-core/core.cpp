@@ -178,13 +178,18 @@ SesameClientCore::get_state() const {
 
 /**
  * @brief Get SESAME setting.
- * Settings are notified from SESAME only when connected.
+ * Settings are notified from SESAME only once when connected.
  *
- * @return const std::variant<LockSetting, BotSetting>&
+ * @return const std::variant<nullptr_t, LockSetting, BotSetting>&
  */
-const std::variant<LockSetting, BotSetting>&
+const std::variant<std::nullptr_t, LockSetting, BotSetting>&
 SesameClientCore::get_setting() const {
 	return impl->get_setting();
+}
+
+void
+SesameClientCore::request_status() {
+	return impl->request_status();
 }
 
 /**
@@ -209,6 +214,18 @@ Status::voltage_to_pct(float voltage) {
 		}
 	}
 	return 0.0f;  // Never reach
+}
+
+/**
+ * @brief return this model has setting
+ * If this function returns false, get_setting() returns nullptr.
+ *
+ * @return true
+ * @return false
+ */
+bool
+libsesame3bt::core::SesameClientCore::has_setting() const {
+	return impl->has_setting();
 }
 
 }  // namespace libsesame3bt::core

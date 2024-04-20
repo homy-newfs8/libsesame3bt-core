@@ -52,8 +52,10 @@ class SesameClientCoreImpl {
 	void set_history_callback(history_callback_t callback) { history_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
-	const std::variant<LockSetting, BotSetting>& get_setting() const { return setting; }
+	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const { return setting; }
 	void disconnect();
+	bool has_setting() const;
+	void request_status();
 
  private:
 	friend class OS2Handler;
@@ -79,7 +81,7 @@ class SesameClientCoreImpl {
 	std::atomic<state_t> state{state_t::idle};
 	size_t recv_size = 0;
 	bool skipping = false;
-	std::variant<LockSetting, BotSetting> setting;
+	std::variant<std::nullptr_t, LockSetting, BotSetting> setting;
 	Status sesame_status;
 	status_callback_t lock_status_callback{};
 	state_callback_t state_callback{};
@@ -98,8 +100,6 @@ class SesameClientCoreImpl {
 	bool decrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
 	bool encrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
 	void handle_publish_initial();
-	void handle_publish_mecha_setting();
-	void handle_publish_mecha_status();
 	void handle_response_login();
 	void fire_status_callback();
 	void update_state(state_t new_state);

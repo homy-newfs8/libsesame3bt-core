@@ -186,7 +186,6 @@ OS2Handler::handle_response_login(const std::byte* in, size_t in_len) {
 
 void
 OS2Handler::handle_history(const std::byte* in, size_t in_len) {
-	DEBUG_PRINTF("history(%u): %s\n", in_len, util::bin2hex(in, in_len).c_str());
 	History history{};
 	if (in_len < 2) {
 		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
@@ -260,7 +259,7 @@ OS2Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 }
 
 void
-OS2Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
+OS2Handler::handle_mecha_status(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_status_t)) {
 		DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored\n", in_len);
 		return;

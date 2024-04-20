@@ -28,6 +28,8 @@ constexpr size_t IV_COUNTER_SIZE = 5;
 using util::to_cptr;
 using util::to_ptr;
 
+using model_t = Sesame::model_t;
+
 SesameClientCoreImpl::SesameClientCoreImpl(SesameClientBackend& backend, SesameClientCore& core) : backend(backend), core(core) {}
 
 SesameClientCoreImpl::~SesameClientCoreImpl() {}
@@ -46,17 +48,21 @@ SesameClientCoreImpl::disconnect() {
 }
 
 bool
-SesameClientCoreImpl::begin(Sesame::model_t model) {
+SesameClientCoreImpl::begin(model_t model) {
 	this->model = model;
 	switch (model) {
-		case Sesame::model_t::sesame_3:
-		case Sesame::model_t::sesame_4:
-		case Sesame::model_t::sesame_bike:
-		case Sesame::model_t::sesame_bot:
+		case model_t::sesame_3:
+		case model_t::sesame_bot:
+		case model_t::sesame_bike:
+		case model_t::sesame_4:
 			handler.emplace(std::in_place_type<OS2Handler>, this);
 			break;
-		case Sesame::model_t::sesame_5:
-		case Sesame::model_t::sesame_5_pro:
+		case model_t::sesame_5:
+		case model_t::sesame_bike_2:
+		case model_t::sesame_5_pro:
+		case model_t::open_sensor_1:
+		case model_t::sesame_touch_pro:
+		case model_t::sesame_touch:
 			handler.emplace(std::in_place_type<OS3Handler>, this);
 			break;
 		default:
@@ -216,10 +222,12 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					handle_publish_initial();
 					break;
 				case Sesame::item_code_t::mech_setting:
-					handle_publish_mecha_setting();
+					handler->handle_publish_mecha_setting(&recv_buffer[sizeof(Sesame::message_header_t)],
+					                                      recv_size - sizeof(Sesame::message_header_t));
 					break;
 				case Sesame::item_code_t::mech_status:
-					handle_publish_mecha_status();
+					handler->handle_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
+					                             recv_size - sizeof(Sesame::message_header_t));
 					break;
 				default:
 					DEBUG_PRINTF("%u: Unsupported item on publish\n", static_cast<uint8_t>(msg->item_code));
@@ -230,6 +238,10 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 			switch (msg->item_code) {
 				case Sesame::item_code_t::login:
 					handle_response_login();
+					break;
+				case Sesame::item_code_t::mech_status:
+					handler->handle_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t) + 1],
+					                             recv_size - sizeof(Sesame::message_header_t) - 1);
 					break;
 				case Sesame::item_code_t::history:
 					if (history_callback) {
@@ -297,8 +309,8 @@ SesameClientCoreImpl::unlock(std::string_view tag) {
 
 bool
 SesameClientCoreImpl::lock(std::string_view tag) {
-	if (model == Sesame::model_t::sesame_cycle) {
-		DEBUG_PRINTLN("SESAME Cycle do not support locking");
+	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
+		DEBUG_PRINTLN("SESAME Bike do not support locking");
 		return false;
 	}
 	if (!is_session_active()) {
@@ -310,7 +322,7 @@ SesameClientCoreImpl::lock(std::string_view tag) {
 
 bool
 SesameClientCoreImpl::click(std::string_view tag) {
-	if (model != Sesame::model_t::sesame_bot) {
+	if (model != model_t::sesame_bot) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;
 	}
@@ -319,20 +331,6 @@ SesameClientCoreImpl::click(std::string_view tag) {
 		return false;
 	}
 	return send_cmd_with_tag(Sesame::item_code_t::click, tag);
-}
-
-void
-SesameClientCoreImpl::handle_publish_mecha_setting() {
-	handler->handle_publish_mecha_setting(&recv_buffer[sizeof(Sesame::message_header_t)],
-	                                      recv_size - sizeof(Sesame::message_header_t));
-	return;
-}
-
-void
-SesameClientCoreImpl::handle_publish_mecha_status() {
-	handler->handle_publish_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
-	                                     recv_size - sizeof(Sesame::message_header_t));
-	return;
 }
 
 void
@@ -349,6 +347,23 @@ SesameClientCoreImpl::on_disconnected() {
 		reset_session();
 		update_state(state_t::idle);
 	}
+}
+
+bool
+SesameClientCoreImpl::has_setting() const {
+	switch (model) {
+		case model_t::open_sensor_1:  // may be
+		case model_t::sesame_touch:
+		case model_t::sesame_touch_pro:  // may be
+			return false;
+		default:
+			return true;
+	}
+}
+
+void
+SesameClientCoreImpl::request_status() {
+	handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);
 }
 
 }  // namespace libsesame3bt::core

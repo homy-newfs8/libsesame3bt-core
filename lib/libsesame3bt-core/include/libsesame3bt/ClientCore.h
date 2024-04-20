@@ -230,7 +230,9 @@ class SesameClientCore {
 	void set_history_callback(history_callback_t callback);
 	Sesame::model_t get_model() const;
 	state_t get_state() const;
-	const std::variant<LockSetting, BotSetting>& get_setting() const;
+	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const;
+	bool has_setting() const;
+	void request_status();
 
 	void on_received(const std::byte*, size_t);
 	void on_disconnected();

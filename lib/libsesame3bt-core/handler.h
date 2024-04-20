@@ -51,8 +51,8 @@ class Handler {
 	void handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 		std::visit([in, in_len](auto& v) { v.handle_publish_mecha_setting(in, in_len); }, handler);
 	}
-	void handle_publish_mecha_status(const std::byte* in, size_t in_len) {
-		std::visit([in, in_len](auto& v) { v.handle_publish_mecha_status(in, in_len); }, handler);
+	void handle_mecha_status(const std::byte* in, size_t in_len) {
+		std::visit([in, in_len](auto& v) { v.handle_mecha_status(in, in_len); }, handler);
 	}
 	void handle_history(const std::byte* in, size_t in_len) {
 		std::visit([in, in_len](auto& v) { v.handle_history(in, in_len); }, handler);
