@@ -226,8 +226,8 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					                                      recv_size - sizeof(Sesame::message_header_t));
 					break;
 				case Sesame::item_code_t::mech_status:
-					handler->handle_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
-					                             recv_size - sizeof(Sesame::message_header_t));
+					handler->handle_publish_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
+					                                     recv_size - sizeof(Sesame::message_header_t));
 					break;
 				default:
 					DEBUG_PRINTF("%u: Unsupported item on publish\n", static_cast<uint8_t>(msg->item_code));
@@ -240,8 +240,8 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					handle_response_login();
 					break;
 				case Sesame::item_code_t::mech_status:
-					handler->handle_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t) + 1],
-					                             recv_size - sizeof(Sesame::message_header_t) - 1);
+					handler->handle_response_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
+					                                      recv_size - sizeof(Sesame::message_header_t));
 					break;
 				case Sesame::item_code_t::history:
 					if (history_callback) {
@@ -309,7 +309,7 @@ SesameClientCoreImpl::unlock(std::string_view tag) {
 
 bool
 SesameClientCoreImpl::lock(std::string_view tag) {
-	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
+	if (model == model_t::sesame_bike) {
 		DEBUG_PRINTLN("SESAME Bike do not support locking");
 		return false;
 	}

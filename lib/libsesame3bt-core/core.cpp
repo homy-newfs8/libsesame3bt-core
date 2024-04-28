@@ -179,6 +179,7 @@ SesameClientCore::get_state() const {
 /**
  * @brief Get SESAME setting.
  * Settings are notified from SESAME only once when connected.
+ * @note This method is valid when state is `state_t::active`
  *
  * @return const std::variant<nullptr_t, LockSetting, BotSetting>&
  */
@@ -187,6 +188,11 @@ SesameClientCore::get_setting() const {
 	return impl->get_setting();
 }
 
+/**
+ * @brief Request SESAME to send status
+ * @note Not all models support this request
+ *
+ */
 void
 SesameClientCore::request_status() {
 	return impl->request_status();

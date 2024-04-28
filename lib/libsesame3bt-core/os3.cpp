@@ -162,7 +162,7 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 }
 
 void
-OS3Handler::handle_mecha_status(const std::byte* in, size_t in_len) {
+OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
 		DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored\n", in_len);
 		return;
