@@ -194,11 +194,17 @@ class SesameClientBackend {
 
 enum class state_t : uint8_t { idle, authenticating, active };
 
+struct RegisteredDevice {
+	uint8_t uuid[16];
+	Sesame::os_ver_t os_ver;
+};
+
 class SesameClientCoreImpl;
 class SesameClientCore;
 using status_callback_t = std::function<void(SesameClientCore& client, Status status)>;
 using state_callback_t = std::function<void(SesameClientCore& client, state_t state)>;
 using history_callback_t = std::function<void(SesameClientCore& client, const History& history)>;
+using registered_devices_callback_t = std::function<void(SesameClientCore& client, const std::vector<RegisteredDevice>& devices)>;
 
 /**
  * @brief Sesame client
@@ -228,6 +234,7 @@ class SesameClientCore {
 	void set_status_callback(status_callback_t callback);
 	void set_state_callback(state_callback_t callback);
 	void set_history_callback(history_callback_t callback);
+	void set_registered_devices_callback(registered_devices_callback_t callback);
 	Sesame::model_t get_model() const;
 	state_t get_state() const;
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const;

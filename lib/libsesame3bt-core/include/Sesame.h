@@ -76,6 +76,9 @@ class Sesame {
 		detect_dir = 87,
 		toggle = 88,
 		click = 89,
+		add_sesame = 101,
+		pub_key_sesame = 102,
+		remove_sesame = 103,
 	};
 	enum class result_code_t : uint8_t {
 		success = 0,

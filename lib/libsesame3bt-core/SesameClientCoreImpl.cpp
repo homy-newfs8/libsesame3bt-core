@@ -1,4 +1,5 @@
 #include "SesameClientCoreImpl.h"
+#include <mbedtls/base64.h>
 #include <mbedtls/cmac.h>
 #include <mbedtls/ecdh.h>
 #include <cinttypes>
@@ -22,6 +23,7 @@ constexpr size_t KEY_INDEX_SIZE = 2;
 constexpr size_t ADD_DATA_SIZE = 1;
 constexpr size_t TOKEN_SIZE = Sesame::TOKEN_SIZE;
 constexpr size_t IV_COUNTER_SIZE = 5;
+constexpr size_t REGISTERED_DEVICE_DATA_SIZE = 23;
 
 }  // namespace
 
@@ -231,6 +233,10 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					handler->handle_publish_mecha_status(&recv_buffer[sizeof(Sesame::message_header_t)],
 					                                     recv_size - sizeof(Sesame::message_header_t));
 					break;
+				case Sesame::item_code_t::pub_key_sesame:
+					handle_publish_pub_key_sesame(&recv_buffer[sizeof(Sesame::message_header_t)],
+					                              recv_size - sizeof(Sesame::message_header_t));
+					break;
 				default:
 					DEBUG_PRINTF("%u: Unsupported item on publish\n", static_cast<uint8_t>(msg->item_code));
 					break;
@@ -368,6 +374,43 @@ SesameClientCoreImpl::has_setting() const {
 void
 SesameClientCoreImpl::request_status() {
 	handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);
+}
+
+void
+SesameClientCoreImpl::handle_publish_pub_key_sesame(const std::byte* in, size_t in_size) {
+	if (!registered_devices_callback) {
+		return;
+	}
+	int ndevices = in_size / REGISTERED_DEVICE_DATA_SIZE;
+	auto regs = std::vector<RegisteredDevice>();
+	for (auto i = 0; i < ndevices; i++) {
+		const auto* top = in + REGISTERED_DEVICE_DATA_SIZE * i;
+		if (top[22] == std::byte{0}) {
+			continue;
+		}
+		if (top[21] == std::byte{0}) {
+			// OS3
+			RegisteredDevice dev;
+			std::copy(top, top + std::size(dev.uuid), reinterpret_cast<std::byte*>(dev.uuid));
+			dev.os_ver = Sesame::os_ver_t::os3;
+			regs.push_back(dev);
+		} else {
+			// OS2
+			uint8_t b64[22 + 2];
+			std::copy(top, top + 22, reinterpret_cast<std::byte*>(b64));
+			b64[22] = b64[23] = '=';  // not nul terminated
+			size_t idlen;
+			RegisteredDevice dev;
+			int rc = mbedtls_base64_decode(dev.uuid, sizeof(dev.uuid), &idlen, b64, sizeof(b64));
+			if (rc != 0 || idlen != sizeof(dev.uuid)) {
+				DEBUG_PRINTF("%s: Failed to decode registered device (OS2)\n", util::bin2hex(b64, sizeof(b64)).c_str());
+				continue;
+			}
+			dev.os_ver = Sesame::os_ver_t::os2;
+			regs.push_back(dev);
+		}
+	}
+	registered_devices_callback(core, regs);
 }
 
 }  // namespace libsesame3bt::core

@@ -157,6 +157,16 @@ SesameClientCore::set_history_callback(history_callback_t callback) {
 }
 
 /**
+ * @brief Set callback for notify registered Sesame devices (from Touch, OpenSensor, Remote)
+ *
+ * @param callback
+ */
+void
+SesameClientCore::set_registered_devices_callback(registered_devices_callback_t callback) {
+	impl->set_registered_devices_callback(callback);
+}
+
+/**
  * @brief SESAME model (initialized with begin()).
  *
  * @return Sesame::model_t

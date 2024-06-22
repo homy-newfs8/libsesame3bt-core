@@ -50,6 +50,7 @@ class SesameClientCoreImpl {
 	void set_status_callback(status_callback_t callback) { lock_status_callback = callback; }
 	void set_state_callback(state_callback_t callback) { state_callback = callback; }
 	void set_history_callback(history_callback_t callback) { history_callback = callback; }
+	void set_registered_devices_callback(registered_devices_callback_t callback) { registered_devices_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const { return setting; }
@@ -86,6 +87,7 @@ class SesameClientCoreImpl {
 	status_callback_t lock_status_callback{};
 	state_callback_t state_callback{};
 	history_callback_t history_callback{};
+	registered_devices_callback_t registered_devices_callback{};
 	Sesame::model_t model;
 	std::optional<Handler> handler;
 
@@ -105,6 +107,7 @@ class SesameClientCoreImpl {
 	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
 	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
+	void handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
 };
 
 }  // namespace libsesame3bt::core
