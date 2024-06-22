@@ -33,6 +33,8 @@ class Sesame {
 		sesame_touch_pro = 9,
 		sesame_touch = 10,
 		ble_connector = 11,
+		remote = 14,
+		remote_nano = 15,
 	};
 	enum class motor_status_t : uint8_t { idle = 0, locking, holding, unlocking };
 	enum class op_code_t : uint8_t {
@@ -112,7 +114,7 @@ class Sesame {
 
 	static os_ver_t get_os_ver(model_t model) {
 		int8_t v = static_cast<int8_t>(model);
-		if (v < 0 || v > static_cast<int8_t>(model_t::ble_connector)) {
+		if (v < 0 || v > static_cast<int8_t>(model_t::remote_nano)) {
 			return os_ver_t::unknown;
 		} else if (v >= static_cast<int8_t>(model_t::sesame_3) && v <= static_cast<int8_t>(model_t::sesame_4)) {
 			return os_ver_t::os2;

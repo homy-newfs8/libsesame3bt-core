@@ -63,6 +63,8 @@ SesameClientCoreImpl::begin(model_t model) {
 		case model_t::open_sensor_1:
 		case model_t::sesame_touch_pro:
 		case model_t::sesame_touch:
+		case model_t::remote:
+		case model_t::remote_nano:
 			handler.emplace(std::in_place_type<OS3Handler>, this);
 			break;
 		default:
@@ -355,6 +357,8 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::open_sensor_1:  // may be
 		case model_t::sesame_touch:
 		case model_t::sesame_touch_pro:  // may be
+		case model_t::remote:
+		case model_t::remote_nano:
 			return false;
 		default:
 			return true;
