@@ -7,7 +7,7 @@ namespace libsesame3bt {
 class Sesame {
  public:
 	static constexpr size_t TOKEN_SIZE = 4;
-	static inline const char* SESAME3_SRV_UUID{"0000fd81-0000-1000-8000-00805f9b34fb"};
+	static inline const char* SESAME3_SRV_UUID{"fd81"};
 	static inline const char* TxUUID{"16860002-a5ae-9856-b6d3-dbb4c676993e"};
 	static inline const char* RxUUID{"16860003-a5ae-9856-b6d3-dbb4c676993e"};
 	static constexpr size_t PK_SIZE = 64;
