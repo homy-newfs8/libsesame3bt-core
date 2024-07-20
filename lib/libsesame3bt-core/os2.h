@@ -6,7 +6,8 @@
 #include <cstdint>
 #include <string_view>
 #include "Sesame.h"
-#include "api_wrapper.h"
+#include "crypt.h"
+#include "transport.h"
 
 namespace libsesame3bt::core {
 
@@ -14,7 +15,8 @@ class SesameClientCoreImpl;
 
 class OS2Handler {
  public:
-	OS2Handler(SesameClientCoreImpl* client) : client(client) {}
+	OS2Handler(SesameClientCoreImpl* client, SesameBLETransport& transport, CryptHandler& crypt)
+	    : client(client), transport(transport), crypt(crypt) {}
 	OS2Handler(const OS2Handler&) = delete;
 	OS2Handler& operator=(const OS2Handler&) = delete;
 	bool init() { return static_initialized; }
@@ -26,8 +28,6 @@ class OS2Handler {
 	                  const std::byte* data,
 	                  size_t data_size,
 	                  bool is_crypted);
-	void update_enc_iv();
-	void update_dec_iv();
 
 	void handle_publish_initial(const std::byte* in, size_t in_len);
 	void handle_response_login(const std::byte* in, size_t in_len);
@@ -41,6 +41,8 @@ class OS2Handler {
 
  private:
 	SesameClientCoreImpl* client;
+	SesameBLETransport& transport;
+	CryptHandler& crypt;
 	api_wrapper<mbedtls_ecp_point> sesame_pk{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
@@ -57,8 +59,6 @@ class OS2Handler {
 	bool generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
 	                          const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
 	                          std::array<std::byte, 1 + Sesame::PK_SIZE>& pk);
-	void init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
-	                   const std::byte (&sesame_token)[Sesame::TOKEN_SIZE]);
 	bool ecdh(const api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, SK_SIZE>& out);
 	bool create_key_pair(api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, 1 + Sesame::PK_SIZE>& pk);
 	bool generate_tag_response(const std::array<std::byte, 1 + Sesame::PK_SIZE>& pk,

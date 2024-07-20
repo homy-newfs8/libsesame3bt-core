@@ -88,7 +88,7 @@ OS2Handler::send_command(Sesame::op_code_t op_code,
 		plain[0] = to_byte(op_code);
 		plain[1] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[2]);
-		if (!client->encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
+		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
 			return false;
 		}
 	} else {
@@ -96,24 +96,7 @@ OS2Handler::send_command(Sesame::op_code_t op_code,
 		pkt[1] = to_byte(item_code);
 		std::copy(data, data + data_size, &pkt[2]);
 	}
-	return client->send_data(pkt, pkt_size, is_crypted);
-}
-
-void
-OS2Handler::update_enc_iv() {
-	enc_count++;
-	enc_count &= 0x7fffffffffLL;
-	enc_count |= 0x8000000000LL;
-	auto p = reinterpret_cast<const std::byte*>(&enc_count);
-	std::copy(p, p + IV_COUNTER_SIZE, std::begin(client->enc_iv));
-}
-
-void
-OS2Handler::update_dec_iv() {
-	dec_count++;
-	dec_count &= 0x7fffffffffLL;
-	auto p = reinterpret_cast<const std::byte*>(&dec_count);
-	std::copy(p, p + IV_COUNTER_SIZE, std::begin(client->dec_iv));
+	return transport.send_data(pkt, pkt_size, is_crypted);
 }
 
 void
@@ -123,7 +106,7 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		client->disconnect();
 		return;
 	}
-	client->reset_session();
+	crypt.reset_session_key();
 	auto msg = reinterpret_cast<const Sesame::publish_initial_t*>(in);
 
 	std::array<std::byte, Sesame::TOKEN_SIZE> local_tok;
@@ -139,7 +122,7 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		client->disconnect();
 		return;
 	}
-	init_endec_iv(local_tok, msg->token);
+	crypt.init_endec_iv(local_tok, msg->token);
 	std::array<std::byte, AES_BLOCK_SIZE> tag_response;
 	if (!generate_tag_response(bpk, local_tok, msg->token, tag_response)) {
 		client->disconnect();
@@ -303,29 +286,11 @@ OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>
 		DEBUG_PRINTF("%d: cmac_finish failed\n", mbrc);
 		return false;
 	}
-
-	if ((mbrc = mbedtls_ccm_setkey(&client->ccm_ctx, mbedtls_cipher_id_t::MBEDTLS_CIPHER_ID_AES, to_cptr(session_key),
-	                               session_key.size() * 8)) != 0) {
+	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
 		DEBUG_PRINTF("%d: ccm_setkey failed\n", mbrc);
 		return false;
 	}
-	client->is_key_shared = true;
 	return true;
-}
-
-void
-OS2Handler::init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
-                          const std::byte (&sesame_token)[Sesame::TOKEN_SIZE]) {
-	// iv = count[5] + local_tok + sesame_token
-	client->dec_iv = {};
-	std::copy(std::cbegin(sesame_token), std::cend(sesame_token),
-	          std::copy(local_tok.cbegin(), local_tok.cend(), &client->dec_iv[IV_COUNTER_SIZE]));
-	dec_count = 0;
-
-	std::copy(std::cbegin(client->dec_iv), std::cend(client->dec_iv), std::begin(client->enc_iv));
-	enc_count = 0x8000000000;
-	auto p = reinterpret_cast<const std::byte*>(&enc_count);
-	std::copy(p, p + IV_COUNTER_SIZE, std::begin(client->enc_iv));
 }
 
 bool

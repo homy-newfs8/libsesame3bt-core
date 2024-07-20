@@ -6,6 +6,7 @@
 #include <memory>
 #include <string_view>
 #include <variant>
+#include "BLEBackend.h"
 #include "Sesame.h"
 
 namespace libsesame3bt::core {
@@ -170,28 +171,6 @@ struct History {
 	char tag[Sesame::MAX_HISTORY_TAG_SIZE + 1];
 };
 
-/**
- * @brief BLE communication backend interface
- *
- */
-class SesameClientBackend {
- public:
-	/**
-	 * @brief Send data to SESAME Tx characteristic
-	 *
-	 * @param data data to send
-	 * @param size size of data
-	 * @return true Success
-	 * @return false Failure
-	 */
-	virtual bool write_to_tx(const uint8_t* data, size_t size) = 0;
-	/**
-	 * @brief Disconnect BLE connection
-	 *
-	 */
-	virtual void disconnect() = 0;
-};
-
 enum class state_t : uint8_t { idle, authenticating, active };
 
 struct RegisteredDevice {
@@ -212,7 +191,7 @@ using registered_devices_callback_t = std::function<void(SesameClientCore& clien
  */
 class SesameClientCore {
  public:
-	SesameClientCore(SesameClientBackend&);
+	SesameClientCore(SesameBLEBackend&);
 	SesameClientCore(const SesameClientCore&) = delete;
 	SesameClientCore& operator=(const SesameClientCore&) = delete;
 	virtual ~SesameClientCore();

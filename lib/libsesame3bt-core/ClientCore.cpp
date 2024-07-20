@@ -1,9 +1,9 @@
-#include "SesameClientCoreImpl.h"
 #include "libsesame3bt/ClientCore.h"
+#include "SesameClientCoreImpl.h"
 
 namespace libsesame3bt::core {
 
-SesameClientCore::SesameClientCore(SesameClientBackend& backend) : impl(std::make_unique<SesameClientCoreImpl>(backend, *this)) {}
+SesameClientCore::SesameClientCore(SesameBLEBackend& backend) : impl(std::make_unique<SesameClientCoreImpl>(backend, *this)) {}
 
 SesameClientCore::~SesameClientCore() {}
 
@@ -200,8 +200,8 @@ SesameClientCore::get_setting() const {
 
 /**
  * @brief Request SESAME to send status
- * @note Not all models support this request
  *
+ * @note Not all models support this request (SESAME 5 seems not respond)
  */
 void
 SesameClientCore::request_status() {

@@ -12,7 +12,8 @@ namespace libsesame3bt::core {
 class Handler {
  public:
 	template <typename T>
-	Handler(std::in_place_type_t<T> t, SesameClientCoreImpl* client) : handler(t, client) {}
+	Handler(std::in_place_type_t<T> t, SesameClientCoreImpl* client, SesameBLETransport& transport, CryptHandler& crypt)
+	    : handler(t, client, transport, crypt) {}
 	bool init() {
 		return std::visit([](auto& v) { return v.init(); }, handler);
 	}
@@ -31,12 +32,6 @@ class Handler {
 		return std::visit([op_code, item_code, data, data_size,
 		                   is_crypted](auto& v) { return v.send_command(op_code, item_code, data, data_size, is_crypted); },
 		                  handler);
-	}
-	void update_enc_iv() {
-		std::visit([](auto& v) { v.update_enc_iv(); }, handler);
-	}
-	void update_dec_iv() {
-		std::visit([](auto& v) { v.update_dec_iv(); }, handler);
 	}
 	size_t get_max_history_tag_size() const {
 		return std::visit([](auto& v) { return v.get_max_history_tag_size(); }, handler);

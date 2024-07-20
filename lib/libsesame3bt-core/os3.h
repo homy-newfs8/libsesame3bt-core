@@ -3,7 +3,8 @@
 #include <cstdint>
 #include <string_view>
 #include "Sesame.h"
-#include "api_wrapper.h"
+#include "crypt.h"
+#include "transport.h"
 
 namespace libsesame3bt::core {
 
@@ -11,7 +12,8 @@ class SesameClientCoreImpl;
 
 class OS3Handler {
  public:
-	OS3Handler(SesameClientCoreImpl* client) : client(client) {}
+	OS3Handler(SesameClientCoreImpl* client, SesameBLETransport& transport, CryptHandler& crypt)
+	    : client(client), transport(transport), crypt(crypt) {}
 	OS3Handler(const OS3Handler&) = delete;
 	OS3Handler& operator=(const OS3Handler&) = delete;
 	bool init() { return true; }
@@ -23,8 +25,6 @@ class OS3Handler {
 	                  const std::byte* data,
 	                  size_t data_size,
 	                  bool is_crypted);
-	void update_enc_iv();
-	void update_dec_iv();
 
 	void handle_publish_initial(const std::byte* in, size_t in_len);
 	void handle_response_login(const std::byte* in, size_t in_len);
@@ -38,13 +38,13 @@ class OS3Handler {
 
  private:
 	SesameClientCoreImpl* client;
+	SesameBLETransport& transport;
+	CryptHandler& crypt;
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
 	long long dec_count = 0;
 	bool setting_received = false;
 	bool status_received = false;
-
-	void init_endec_iv(const std::byte (&nonce)[Sesame::TOKEN_SIZE]);
 
 	static float battery_voltage(int16_t battery) { return battery * 2.0f / 1000; };
 	static constexpr int8_t voltage_scale(Sesame::model_t model) { return model == Sesame::model_t::sesame_bike_2 ? 2 : 1; };

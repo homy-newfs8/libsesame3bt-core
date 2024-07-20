@@ -12,12 +12,6 @@
 
 namespace libsesame3bt::core {
 
-namespace {
-
-constexpr size_t IV_COUNTER_SIZE = 5;
-
-}
-
 using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
@@ -53,7 +47,7 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 		std::byte plain[1 + data_size];
 		plain[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[1]);
-		if (!client->encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
+		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
 			return false;
 		}
 	} else {
@@ -61,21 +55,7 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 		std::copy(data, data + data_size, &pkt[1]);
 	}
 
-	return client->send_data(pkt, pkt_size, is_crypted);
-}
-
-void
-OS3Handler::update_enc_iv() {
-	enc_count++;
-	auto p = reinterpret_cast<const std::byte*>(&enc_count);
-	std::copy(p, p + IV_COUNTER_SIZE, std::begin(client->enc_iv));
-}
-
-void
-OS3Handler::update_dec_iv() {
-	dec_count++;
-	auto p = reinterpret_cast<const std::byte*>(&dec_count);
-	std::copy(p, p + IV_COUNTER_SIZE, std::begin(client->dec_iv));
+	return transport.send_data(pkt, pkt_size, is_crypted);
 }
 
 void
@@ -110,14 +90,12 @@ OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		client->disconnect();
 		return;
 	}
-	if ((mbrc = mbedtls_ccm_setkey(&client->ccm_ctx, mbedtls_cipher_id_t::MBEDTLS_CIPHER_ID_AES, to_cptr(session_key),
-	                               session_key.size() * 8)) != 0) {
+	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
 		DEBUG_PRINTF("%d: ccm_setkey failed\n", mbrc);
 		client->disconnect();
 		return;
 	}
-	client->is_key_shared = true;
-	init_endec_iv(msg->token);
+	crypt.init_endec_iv(std::array<std::byte, Sesame::TOKEN_SIZE>{}, msg->token);
 	if (send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false)) {
 		client->update_state(state_t::authenticating);
 	} else {
@@ -221,15 +199,6 @@ OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 	}
 	history.type = histtype;
 	client->fire_history_callback(history);
-}
-
-void
-OS3Handler::init_endec_iv(const std::byte (&nonce)[Sesame::TOKEN_SIZE]) {
-	dec_count = enc_count = 0;
-	client->dec_iv = {};
-	std::copy(std::cbegin(nonce), std::cend(nonce), &client->dec_iv[sizeof(dec_count) + 1]);
-	client->enc_iv = {};
-	std::copy(std::cbegin(nonce), std::cend(nonce), &client->enc_iv[sizeof(enc_count) + 1]);
 }
 
 }  // namespace libsesame3bt::core
