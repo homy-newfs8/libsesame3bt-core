@@ -1,5 +1,4 @@
 #include "os2.h"
-#include <mbedtls/cmac.h>
 #include <mbedtls/ecdh.h>
 #include "Sesame.h"
 #include "SesameClientCoreImpl.h"
@@ -256,7 +255,6 @@ bool
 OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
                                  const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
                                  std::array<std::byte, 1 + Sesame::PK_SIZE>& pk) {
-	api_wrapper<mbedtls_cipher_context_t> ctx{mbedtls_cipher_init, mbedtls_cipher_free};
 	api_wrapper<mbedtls_mpi> sk{mbedtls_mpi_init, mbedtls_mpi_free};
 
 	if (!create_key_pair(sk, pk)) {
@@ -267,27 +265,13 @@ OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>
 		return false;
 	}
 
-	int mbrc;
-	if ((mbrc = mbedtls_cipher_setup(&ctx, mbedtls_cipher_info_from_type(mbedtls_cipher_type_t::MBEDTLS_CIPHER_AES_128_ECB))) != 0) {
-		DEBUG_PRINTF("%d: cipher setup failed\n", mbrc);
-		return false;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_starts(&ctx, to_cptr(ssec), AES_KEY_SIZE * 8)) != 0) {
-		DEBUG_PRINTF("%d: cmac start failed\n", mbrc);
-		return false;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(local_tok), local_tok.size())) != 0 ||
-	    (mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(sesame_token), std::size(sesame_token))) != 0) {
-		DEBUG_PRINTF("%d: cmac_update failed\n", mbrc);
-		return false;
-	}
+	CmacAes128 cmac;
 	std::array<std::byte, 16> session_key;
-	if ((mbrc = mbedtls_cipher_cmac_finish(&ctx, to_ptr(session_key))) != 0) {
-		DEBUG_PRINTF("%d: cmac_finish failed\n", mbrc);
+	if (!cmac.set_key(*reinterpret_cast<const std::byte(*)[AES_KEY_SIZE]>(ssec.data())) || !cmac.update(local_tok) ||
+	    !cmac.update(sesame_token) || !cmac.finish(session_key)) {
 		return false;
 	}
 	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
-		DEBUG_PRINTF("%d: ccm_setkey failed\n", mbrc);
 		return false;
 	}
 	return true;
@@ -354,26 +338,9 @@ OS2Handler::generate_tag_response(const std::array<std::byte, 1 + Sesame::PK_SIZ
                                   const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
                                   const std::byte (&sesame_token)[4],
                                   std::array<std::byte, AES_BLOCK_SIZE>& tag_response) {
-	api_wrapper<mbedtls_cipher_context_t> ctx{mbedtls_cipher_init, mbedtls_cipher_free};
-	int mbrc;
-	if ((mbrc = mbedtls_cipher_setup(&ctx, mbedtls_cipher_info_from_type(mbedtls_cipher_type_t::MBEDTLS_CIPHER_AES_128_ECB))) != 0) {
-		DEBUG_PRINTF("%d: cipher_setup failed\n", mbrc);
-		return false;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_starts(&ctx, to_cptr(sesame_secret), sesame_secret.size() * 8)) != 0) {
-		DEBUG_PRINTF("%d: cmac_start failed\n", mbrc);
-		return false;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(sesame_ki), sesame_ki.size())) != 0 ||
-	    (mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(bpk) + 1, bpk.size() - 1)) != 0 ||
-	    (mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(local_tok), local_tok.size())) != 0 ||
-	    (mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(sesame_token), std::size(sesame_token))) != 0) {
-		DEBUG_PRINTF("%d: cmac_update failed\n", mbrc);
-		return false;
-	}
-
-	if ((mbrc = mbedtls_cipher_cmac_finish(&ctx, to_ptr(tag_response))) != 0) {
-		DEBUG_PRINTF("%d: cmac_finish failed\n", mbrc);
+	CmacAes128 cmac;
+	if (!cmac.set_key(sesame_secret) || !cmac.update(sesame_ki) || !cmac.update(bpk.data() + 1, bpk.size() - 1) ||
+	    !cmac.update(local_tok) || !cmac.update(sesame_token) || !cmac.finish(tag_response)) {
 		return false;
 	}
 	return true;

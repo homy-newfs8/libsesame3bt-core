@@ -1,5 +1,6 @@
 #pragma once
 #include <mbedtls/ccm.h>
+#include <mbedtls/cipher.h>
 #include <array>
 #include <cstdint>
 #include <variant>
@@ -9,6 +10,27 @@
 #include "os3_crypt.h"
 
 namespace libsesame3bt::core {
+
+class CmacAes128 {
+ public:
+	CmacAes128() {}
+	bool set_key(const std::byte (&key)[16]);
+	bool set_key(const std::array<std::byte, 16>& key) { return set_key(*reinterpret_cast<const std::byte(*)[16]>(key.data())); }
+	bool update(const std::byte* data, size_t size);
+	template <size_t N>
+	bool update(const std::byte (&data)[N]) {
+		return update(data, N);
+	}
+	template <size_t N>
+	bool update(const std::array<std::byte, N> data) {
+		return update(data.data(), N);
+	}
+	bool finish(std::byte (&cmac)[16]);
+	bool finish(std::array<std::byte, 16>& cmac) { return finish(*reinterpret_cast<std::byte(*)[16]>(cmac.data())); }
+
+ private:
+	api_wrapper<mbedtls_cipher_context_t> ctx{mbedtls_cipher_init, mbedtls_cipher_free};
+};
 
 class CryptHandler {
  public:

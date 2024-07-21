@@ -1,5 +1,4 @@
 #include "os3.h"
-#include <mbedtls/cmac.h>
 #include "Sesame.h"
 #include "SesameClientCoreImpl.h"
 #include "libsesame3bt/ClientCore.h"
@@ -66,32 +65,13 @@ OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		return;
 	}
 	const auto* msg = reinterpret_cast<const Sesame::publish_initial_t*>(in);
-	api_wrapper<mbedtls_cipher_context_t> ctx{mbedtls_cipher_init, mbedtls_cipher_free};
-	int mbrc;
-	if ((mbrc = mbedtls_cipher_setup(&ctx, mbedtls_cipher_info_from_type(mbedtls_cipher_type_t::MBEDTLS_CIPHER_AES_128_ECB))) != 0) {
-		DEBUG_PRINTF("%d: cipher_setup failed\n", mbrc);
-		client->disconnect();
-		return;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_starts(&ctx, to_cptr(sesame_secret), sesame_secret.size() * 8)) != 0) {
-		DEBUG_PRINTF("%d: cmac_start failed\n", mbrc);
-		client->disconnect();
-		return;
-	}
-	if ((mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(msg->token), sizeof(msg->token))) != 0) {
-		DEBUG_PRINTF("%d: cmac_update failed\n", mbrc);
-		client->disconnect();
-		return;
-	}
-
+	CmacAes128 cmac;
 	std::array<std::byte, 16> session_key;
-	if ((mbrc = mbedtls_cipher_cmac_finish(&ctx, to_ptr(session_key))) != 0) {
-		DEBUG_PRINTF("%d: cmac_finish failed\n", mbrc);
+	if (!cmac.set_key(sesame_secret) || !cmac.update(msg->token) || !cmac.finish(session_key)) {
 		client->disconnect();
 		return;
 	}
 	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
-		DEBUG_PRINTF("%d: ccm_setkey failed\n", mbrc);
 		client->disconnect();
 		return;
 	}

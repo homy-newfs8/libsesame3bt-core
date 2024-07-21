@@ -1,4 +1,5 @@
 #include "crypt.h"
+#include <mbedtls/cmac.h>
 #include <cstddef>
 #include "debug.h"
 #include "libsesame3bt/util.h"
@@ -54,6 +55,38 @@ void
 CryptHandler::reset_session_key() {
 	ccm_ctx.reset();
 	key_prepared = false;
+}
+
+bool
+CmacAes128::set_key(const std::byte (&key)[16]) {
+	int mbrc;
+	if ((mbrc = mbedtls_cipher_setup(&ctx, mbedtls_cipher_info_from_type(mbedtls_cipher_type_t::MBEDTLS_CIPHER_AES_128_ECB))) != 0) {
+		DEBUG_PRINTF("%d: cipher setup failed\n", mbrc);
+		return false;
+	}
+	if ((mbrc = mbedtls_cipher_cmac_starts(&ctx, to_cptr(key), sizeof(key) * 8)) != 0) {
+		DEBUG_PRINTF("%d: cmac start failed\n", mbrc);
+		return false;
+	}
+	return true;
+}
+
+bool
+CmacAes128::update(const std::byte* data, size_t size) {
+	if (int mbrc = mbedtls_cipher_cmac_update(&ctx, to_cptr(data), size); mbrc != 0) {
+		DEBUG_PRINTF("%d: cmac update failed\n", mbrc);
+		return false;
+	}
+	return true;
+}
+
+bool
+CmacAes128::finish(std::byte (&cmac)[16]) {
+	if (int mbrc = mbedtls_cipher_cmac_finish(&ctx, to_ptr(cmac)); mbrc != 0) {
+		DEBUG_PRINTF("%d: cmac_finish failed\n", mbrc);
+		return false;
+	}
+	return true;
 }
 
 }  // namespace libsesame3bt::core
