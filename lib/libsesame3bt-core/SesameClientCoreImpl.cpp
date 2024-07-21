@@ -1,7 +1,5 @@
 #include "SesameClientCoreImpl.h"
 #include <mbedtls/base64.h>
-#include <mbedtls/cmac.h>
-#include <mbedtls/ecdh.h>
 #include <cinttypes>
 #include "libsesame3bt/ClientCore.h"
 #include "libsesame3bt/util.h"

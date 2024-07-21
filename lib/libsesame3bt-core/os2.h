@@ -1,12 +1,10 @@
 #pragma once
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ecp.h>
-#include <mbedtls/entropy.h>
 #include <array>
 #include <cstdint>
 #include <string_view>
 #include "Sesame.h"
 #include "crypt.h"
+#include "crypt_ecc.h"
 #include "transport.h"
 
 namespace libsesame3bt::core {
@@ -19,7 +17,7 @@ class OS2Handler {
 	    : client(client), transport(transport), crypt(crypt) {}
 	OS2Handler(const OS2Handler&) = delete;
 	OS2Handler& operator=(const OS2Handler&) = delete;
-	bool init() { return static_initialized; }
+	bool init() { return Ecc::initialized(); }
 	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
@@ -43,25 +41,21 @@ class OS2Handler {
 	SesameClientCoreImpl* client;
 	SesameBLETransport& transport;
 	CryptHandler& crypt;
+	Ecc ecc;
 	api_wrapper<mbedtls_ecp_point> sesame_pk{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
 	long long dec_count = 0;
 
-	static bool static_initialized;
 	static constexpr std::array<std::byte, 2> sesame_ki{};
-	static inline api_wrapper<mbedtls_ctr_drbg_context> rng_ctx{mbedtls_ctr_drbg_init, mbedtls_ctr_drbg_free};
-	static inline api_wrapper<mbedtls_entropy_context> ent_ctx{mbedtls_entropy_init, mbedtls_entropy_free};
-	static inline api_wrapper<mbedtls_ecp_group> ec_grp{mbedtls_ecp_group_init, mbedtls_ecp_group_free};
-	static constexpr size_t SK_SIZE = 32;
 	static constexpr size_t AES_BLOCK_SIZE = 16;
 
 	bool generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
 	                          const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
-	                          std::array<std::byte, 1 + Sesame::PK_SIZE>& pk);
-	bool ecdh(const api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, SK_SIZE>& out);
-	bool create_key_pair(api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, 1 + Sesame::PK_SIZE>& pk);
-	bool generate_tag_response(const std::array<std::byte, 1 + Sesame::PK_SIZE>& pk,
+	                          std::array<std::byte, Sesame::PK_SIZE>& pk);
+	bool ecdh(std::array<std::byte, Ecc::SK_SIZE>& out);
+	bool create_key_pair(std::array<std::byte, Sesame::PK_SIZE>& pk);
+	bool generate_tag_response(const std::array<std::byte, Sesame::PK_SIZE>& pk,
 	                           const std::array<std::byte, Sesame::TOKEN_SIZE>& local_token,
 	                           const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
 	                           std::array<std::byte, AES_BLOCK_SIZE>& tag_response);

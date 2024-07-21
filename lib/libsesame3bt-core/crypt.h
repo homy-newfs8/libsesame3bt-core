@@ -37,9 +37,6 @@ class CryptHandler {
 	static constexpr size_t CMAC_TAG_SIZE = 4;
 	template <typename T>
 	CryptHandler(std::in_place_type_t<T> t) : handler(t) {}
-	bool init() {
-		return std::visit([](auto& v) { return v.init(); }, handler);
-	}
 	void update_enc_iv() {
 		std::visit([this](auto& v) { v.update_enc_iv(enc_iv); }, handler);
 	}

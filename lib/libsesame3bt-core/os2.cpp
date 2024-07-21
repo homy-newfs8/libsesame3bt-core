@@ -1,5 +1,4 @@
 #include "os2.h"
-#include <mbedtls/ecdh.h>
 #include "Sesame.h"
 #include "SesameClientCoreImpl.h"
 #include "libsesame3bt/ClientCore.h"
@@ -24,18 +23,6 @@ using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
-bool OS2Handler::static_initialized = [] {
-	if (mbedtls_ctr_drbg_seed(&rng_ctx, mbedtls_entropy_func, &ent_ctx, nullptr, 0) != 0) {
-		DEBUG_PRINTLN("drbg_seed failed");
-		return false;
-	}
-	if (mbedtls_ecp_group_load(&ec_grp, mbedtls_ecp_group_id::MBEDTLS_ECP_DP_SECP256R1) != 0) {
-		DEBUG_PRINTLN("ecp_group_load failed");
-		return false;
-	}
-	return true;
-}();
-
 bool
 OS2Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
@@ -56,16 +43,7 @@ OS2Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 bool
 OS2Handler::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                      const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
-	std::array<std::byte, 1 + Sesame::PK_SIZE> bin_pk;  // 1 for indicator (SEC1 2.3.4)
-	bin_pk[0] = std::byte{4};                           // uncompressed point indicator
-	std::copy(std::cbegin(public_key), std::cend(public_key), &bin_pk[1]);
-	int mbrc;
-	if ((mbrc = mbedtls_ecp_point_read_binary(&ec_grp, &sesame_pk, to_cptr(bin_pk), bin_pk.size())) != 0) {
-		DEBUG_PRINTF("%d: ecp_point_read_binary failed", mbrc);
-		return false;
-	}
-	if ((mbrc = mbedtls_ecp_check_pubkey(&ec_grp, &sesame_pk)) != 0) {
-		DEBUG_PRINTF("%d: ecp_check_pubkey failed", mbrc);
+	if (!ecc.convert_binary_to_pk(public_key, sesame_pk)) {
 		return false;
 	}
 	std::copy(std::cbegin(secret_key), std::cend(secret_key), std::begin(sesame_secret));
@@ -109,14 +87,12 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	auto msg = reinterpret_cast<const Sesame::publish_initial_t*>(in);
 
 	std::array<std::byte, Sesame::TOKEN_SIZE> local_tok;
-	int mbrc;
-	if ((mbrc = mbedtls_ctr_drbg_random(&rng_ctx, to_ptr(local_tok), local_tok.size())) != 0) {
-		DEBUG_PRINTF("%d: drbg_random failed\n", mbrc);
+	if (!Random::get_random(local_tok)) {
 		client->disconnect();
 		return;
 	}
 
-	std::array<std::byte, 1 + Sesame::PK_SIZE> bpk;
+	std::array<std::byte, Sesame::PK_SIZE> bpk;
 	if (!generate_session_key(local_tok, msg->token, bpk)) {
 		client->disconnect();
 		return;
@@ -134,7 +110,7 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	// resp = sesame_ki + pk + local_tok + tag_response[:4]
 	std::copy(tag_response.cbegin(), tag_response.cbegin() + AUTH_TAG_TRUNCATED_SIZE,
 	          std::copy(local_tok.cbegin(), local_tok.cend(),
-	                    std::copy(bpk.begin() + 1, bpk.end(), std::copy(sesame_ki.cbegin(), sesame_ki.cend(), resp.begin()))));
+	                    std::copy(bpk.begin(), bpk.end(), std::copy(sesame_ki.cbegin(), sesame_ki.cend(), resp.begin()))));
 
 	if (send_command(Sesame::op_code_t::sync, Sesame::item_code_t::login, resp.data(), resp.size(), false)) {
 		client->update_state(state_t::authenticating);
@@ -254,14 +230,12 @@ OS2Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 bool
 OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
                                  const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
-                                 std::array<std::byte, 1 + Sesame::PK_SIZE>& pk) {
-	api_wrapper<mbedtls_mpi> sk{mbedtls_mpi_init, mbedtls_mpi_free};
-
-	if (!create_key_pair(sk, pk)) {
+                                 std::array<std::byte, Sesame::PK_SIZE>& pk) {
+	if (!create_key_pair(pk)) {
 		return false;
 	}
-	std::array<std::byte, SK_SIZE> ssec;
-	if (!ecdh(sk, ssec)) {
+	std::array<std::byte, Ecc::SK_SIZE> ssec;
+	if (!ecdh(ssec)) {
 		return false;
 	}
 
@@ -278,22 +252,11 @@ OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>
 }
 
 bool
-OS2Handler::create_key_pair(api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, 1 + Sesame::PK_SIZE>& bin_pk) {
-	api_wrapper<mbedtls_ecp_point> point{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
-
-	int mbrc;
-	if ((mbrc = mbedtls_ecdh_gen_public(&ec_grp, &sk, &point, mbedtls_ctr_drbg_random, &rng_ctx)) != 0) {
-		DEBUG_PRINTF("%d: ecdh_gen_public failed\n", mbrc);
+OS2Handler::create_key_pair(std::array<std::byte, Sesame::PK_SIZE>& bin_pk) {
+	if (!ecc.generate_keypair()) {
 		return false;
 	}
-	size_t olen;
-	if ((mbrc = mbedtls_ecp_point_write_binary(&ec_grp, &point, MBEDTLS_ECP_PF_UNCOMPRESSED, &olen, to_ptr(bin_pk), bin_pk.size())) !=
-	    0) {
-		DEBUG_PRINTF("%d: ecp_point_write_binary failed\n", mbrc);
-		return false;
-	}
-	if (olen != bin_pk.size()) {
-		DEBUG_PRINTLN("write_binary pk length not match");
+	if (!ecc.export_pk(bin_pk)) {
 		return false;
 	}
 	return true;
@@ -314,28 +277,25 @@ OS2Handler::battery_voltage(Sesame::model_t model, int16_t battery) {
 }
 
 bool
-OS2Handler::ecdh(const api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, SK_SIZE>& out) {
+OS2Handler::ecdh(std::array<std::byte, Ecc::SK_SIZE>& out) {
 	api_wrapper<mbedtls_mpi> shared_secret(mbedtls_mpi_init, mbedtls_mpi_free);
-	int mbrc;
-	if ((mbrc = mbedtls_ecdh_compute_shared(&ec_grp, &shared_secret, &sesame_pk, &sk, mbedtls_ctr_drbg_random, &rng_ctx)) != 0) {
-		DEBUG_PRINTF("%d: ecdh_compute_shared failed\n", mbrc);
+	if (!ecc.ecdh(sesame_pk, shared_secret)) {
 		return false;
 	}
-	if ((mbrc = mbedtls_mpi_write_binary(&shared_secret, to_ptr(out), out.size())) != 0) {
-		DEBUG_PRINTF("%d: mpi_write_binary failed\n", mbrc);
+	if (!ecc.convert_sk_to_binary(shared_secret, out)) {
 		return false;
 	}
 	return true;
 }
 
 bool
-OS2Handler::generate_tag_response(const std::array<std::byte, 1 + Sesame::PK_SIZE>& bpk,
+OS2Handler::generate_tag_response(const std::array<std::byte, Sesame::PK_SIZE>& bpk,
                                   const std::array<std::byte, Sesame::TOKEN_SIZE>& local_tok,
                                   const std::byte (&sesame_token)[4],
                                   std::array<std::byte, AES_BLOCK_SIZE>& tag_response) {
 	CmacAes128 cmac;
-	if (!cmac.set_key(sesame_secret) || !cmac.update(sesame_ki) || !cmac.update(bpk.data() + 1, bpk.size() - 1) ||
-	    !cmac.update(local_tok) || !cmac.update(sesame_token) || !cmac.finish(tag_response)) {
+	if (!cmac.set_key(sesame_secret) || !cmac.update(sesame_ki) || !cmac.update(bpk) || !cmac.update(local_tok) ||
+	    !cmac.update(sesame_token) || !cmac.finish(tag_response)) {
 		return false;
 	}
 	return true;

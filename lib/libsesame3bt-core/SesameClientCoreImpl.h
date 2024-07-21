@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mbedtls/ccm.h>
 #include <array>
 #include <atomic>
 #include <cstddef>
