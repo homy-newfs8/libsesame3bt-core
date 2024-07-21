@@ -279,11 +279,10 @@ OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>
 
 bool
 OS2Handler::create_key_pair(api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, 1 + Sesame::PK_SIZE>& bin_pk) {
-	api_wrapper<mbedtls_mpi> temp_sk{mbedtls_mpi_init, mbedtls_mpi_free};
 	api_wrapper<mbedtls_ecp_point> point{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
 
 	int mbrc;
-	if ((mbrc = mbedtls_ecdh_gen_public(&ec_grp, &temp_sk, &point, mbedtls_ctr_drbg_random, &rng_ctx)) != 0) {
+	if ((mbrc = mbedtls_ecdh_gen_public(&ec_grp, &sk, &point, mbedtls_ctr_drbg_random, &rng_ctx)) != 0) {
 		DEBUG_PRINTF("%d: ecdh_gen_public failed\n", mbrc);
 		return false;
 	}
@@ -295,10 +294,6 @@ OS2Handler::create_key_pair(api_wrapper<mbedtls_mpi>& sk, std::array<std::byte, 
 	}
 	if (olen != bin_pk.size()) {
 		DEBUG_PRINTLN("write_binary pk length not match");
-		return false;
-	}
-	if ((mbrc = mbedtls_mpi_copy(&sk, &temp_sk)) != 0) {
-		DEBUG_PRINTF("%d: mpi_copy failed\n", mbrc);
 		return false;
 	}
 	return true;
