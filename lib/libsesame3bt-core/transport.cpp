@@ -6,6 +6,7 @@
 
 namespace libsesame3bt::core {
 
+using util::to_byte;
 using util::to_cptr;
 
 namespace {
@@ -91,10 +92,6 @@ SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt) 
 		DEBUG_PRINTF("%u: Unexpected packet kind\n", static_cast<uint8_t>(h.kind));
 		return decode_result_t::skipping;
 	}
-	if (buffer.recv_size < sizeof(Sesame::message_header_t)) {
-		DEBUG_PRINTF("%u: Short notification, ignore\n", buffer.recv_size);
-		return decode_result_t::skipping;
-	}
 	return decode_result_t::received;
 }
 
@@ -107,6 +104,31 @@ void
 SesameBLETransport::disconnect() {
 	backend.disconnect();
 	reset();
+}
+
+bool
+SesameBLETransport::send_notify(Sesame::op_code_t op_code,
+                                Sesame::item_code_t item_code,
+                                const std::byte* data,
+                                size_t data_size,
+                                bool is_crypted,
+                                CryptHandler& crypt) {
+	const size_t pkt_size = 2 + data_size + (is_crypted ? Sesame::CMAC_TAG_SIZE : 0);  // 2 for op/item, 4 for encrypted tag
+	std::byte pkt[pkt_size];
+	if (is_crypted) {
+		std::byte plain[2 + data_size];
+		plain[0] = to_byte(op_code);
+		plain[1] = to_byte(item_code);
+		std::copy(data, data + data_size, &plain[2]);
+		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
+			return false;
+		}
+	} else {
+		pkt[0] = to_byte(op_code);
+		pkt[1] = to_byte(item_code);
+		std::copy(data, data + data_size, &pkt[2]);
+	}
+	return send_data(pkt, pkt_size, is_crypted);
 }
 
 }  // namespace libsesame3bt::core

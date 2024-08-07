@@ -43,7 +43,7 @@ SesameClientCoreImpl::begin(model_t model) {
 		case model_t::sesame_bot:
 		case model_t::sesame_bike:
 		case model_t::sesame_4:
-			crypt.emplace(std::in_place_type<OS2CryptHandler>);
+			crypt.emplace(std::in_place_type<OS2IVHandler>);
 			handler.emplace(std::in_place_type<OS2Handler>, this, transport, *crypt);
 			break;
 		case model_t::sesame_5:
@@ -54,7 +54,7 @@ SesameClientCoreImpl::begin(model_t model) {
 		case model_t::sesame_touch:
 		case model_t::remote:
 		case model_t::remote_nano:
-			crypt.emplace(std::in_place_type<OS3CryptHandler>);
+			crypt.emplace(std::in_place_type<OS3IVHandler>);
 			handler.emplace(std::in_place_type<OS3Handler>, this, transport, *crypt);
 			break;
 		default:
@@ -113,6 +113,10 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 	}
 	auto recv_size = transport.data_size();
 	DEBUG_PRINTF("message_len = %u", recv_size);
+	if (recv_size < sizeof(Sesame::message_header_t)) {
+		DEBUG_PRINTLN("too short message dropped");
+		return;
+	}
 	auto* msg = reinterpret_cast<const Sesame::message_header_t*>(transport.data());
 	auto* body = transport.data() + sizeof(Sesame::message_header_t);
 	switch (msg->op_code) {

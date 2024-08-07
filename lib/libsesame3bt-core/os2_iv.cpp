@@ -1,4 +1,4 @@
-#include "os2_crypt.h"
+#include "os2_iv.h"
 
 namespace libsesame3bt::core {
 
@@ -11,7 +11,7 @@ constexpr size_t IV_COUNTER_SIZE = 5;
 }  // namespace
 
 void
-OS2CryptHandler::update_enc_iv(std::array<std::byte, 13>& enc_iv) {
+OS2IVHandler::update_enc_iv(std::array<std::byte, 13>& enc_iv) {
 	enc_count++;
 	enc_count &= 0x7fffffffffLL;
 	enc_count |= 0x8000000000LL;
@@ -20,7 +20,7 @@ OS2CryptHandler::update_enc_iv(std::array<std::byte, 13>& enc_iv) {
 }
 
 void
-OS2CryptHandler::update_dec_iv(std::array<std::byte, 13>& dec_iv) {
+OS2IVHandler::update_dec_iv(std::array<std::byte, 13>& dec_iv) {
 	dec_count++;
 	dec_count &= 0x7fffffffffLL;
 	auto p = reinterpret_cast<const std::byte*>(&dec_count);
@@ -28,10 +28,10 @@ OS2CryptHandler::update_dec_iv(std::array<std::byte, 13>& dec_iv) {
 }
 
 void
-OS2CryptHandler::init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,
-                               const std::byte (&remote_nonce)[Sesame::TOKEN_SIZE],
-                               std::array<std::byte, 13>& enc_iv,
-                               std::array<std::byte, 13>& dec_iv) {
+OS2IVHandler::init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,
+                            const std::byte (&remote_nonce)[Sesame::TOKEN_SIZE],
+                            std::array<std::byte, 13>& enc_iv,
+                            std::array<std::byte, 13>& dec_iv) {
 	// iv = count[5] + local_tok + sesame_token
 	dec_iv = {};
 	std::copy(std::cbegin(remote_nonce), std::cend(remote_nonce),

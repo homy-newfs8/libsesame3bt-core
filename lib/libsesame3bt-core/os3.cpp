@@ -1,7 +1,6 @@
 #include "os3.h"
 #include "Sesame.h"
 #include "SesameClientCoreImpl.h"
-#include "libsesame3bt/ClientCore.h"
 #include "libsesame3bt/util.h"
 
 #ifndef LIBSESAME3BTCORE_DEBUG

@@ -40,6 +40,12 @@ class SesameBLETransport {
 	SesameBLETransport(const SesameBLETransport&) = delete;
 	SesameBLETransport& operator=(const SesameBLETransport&) = delete;
 	bool send_data(const std::byte* pkt, size_t pkt_size, bool is_crypted);
+	bool send_notify(Sesame::op_code_t op_code,
+	                 Sesame::item_code_t item_code,
+	                 const std::byte* data,
+	                 size_t data_size,
+	                 bool is_crypted,
+	                 CryptHandler& crypt);
 	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt);
 	void disconnect();
 	void reset();

@@ -5,9 +5,9 @@
 
 namespace libsesame3bt::core {
 
-class OS2CryptHandler {
+class OS2IVHandler {
  public:
-	OS2CryptHandler() {}
+	OS2IVHandler() {}
 	void update_enc_iv(std::array<std::byte, 13>& enc_iv);
 	void update_dec_iv(std::array<std::byte, 13>& dec_iv);
 	void init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,
