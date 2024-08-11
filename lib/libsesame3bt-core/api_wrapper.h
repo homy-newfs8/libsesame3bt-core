@@ -15,6 +15,7 @@ class api_wrapper {
 	const T* operator&() const { return &wrapped; }
 	T& operator()() { return wrapped; }
 	const T& operator()() const { return wrapped; }
+	T* operator->() { return &wrapped; }
 	void reset() {
 		_free_fn(&wrapped);
 		_init_fn(&wrapped);
