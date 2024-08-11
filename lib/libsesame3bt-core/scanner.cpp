@@ -27,7 +27,7 @@ const uint8_t WIFI_MODULE_UUID_HEAD[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x5a, 0xfd, 
 std::tuple<Sesame::model_t, std::byte, bool>
 parse_advertisement(std::string_view manu_data, std::string_view name, uint8_t (&uuid_bin)[16]) {
 	if (manu_data.length() < 5 || manu_data[0] != 0x5a || manu_data[1] != 0x05) {
-		DEBUG_PRINTF("Unexpected manufacturer data\n");
+		DEBUG_PRINTF("Unexpected manufacturer data, len=%u\n", manu_data.length());
 		return {Sesame::model_t::unknown, std::byte(0), false};
 	}
 	Sesame::model_t model = static_cast<Sesame::model_t>(manu_data[2]);

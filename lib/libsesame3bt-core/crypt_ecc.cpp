@@ -1,5 +1,6 @@
 #include "crypt_ecc.h"
 #include <mbedtls/ecdh.h>
+#include "Sesame.h"
 #include "crypt_random.h"
 #include "debug.h"
 #include "libsesame3bt/util.h"
@@ -24,13 +25,13 @@ Ecc::generate_keypair() {
 		DEBUG_PRINTF("%d: ecdh_gen_public failed\n", mbrc);
 		return false;
 	}
-	pair_generated = true;
+	have_keypair = true;
 	return true;
 }
 
 bool
 Ecc::export_pk(std::array<std::byte, PK_SIZE>& binary) {
-	if (!pair_generated) {
+	if (!have_keypair) {
 		DEBUG_PRINTLN("Keypair not generated");
 		return false;
 	}
@@ -47,6 +48,25 @@ Ecc::export_pk(std::array<std::byte, PK_SIZE>& binary) {
 		return false;
 	}
 	std::copy(temp.data() + 1, temp.data() + temp.size(), binary.data());
+	return true;
+}
+
+bool
+Ecc::derive_secret(const std::array<std::byte, PK_SIZE>& remote_pk_bin, std::array<std::byte, Sesame::SECRET_SIZE>& sesame_secret) {
+	api_wrapper<mbedtls_ecp_point> remote_pk{mbedtls_ecp_point_init, mbedtls_ecp_point_free};
+	if (!convert_binary_to_pk(remote_pk_bin, remote_pk)) {
+		return false;
+	}
+	api_wrapper<mbedtls_mpi> secret{mbedtls_mpi_init, mbedtls_mpi_free};
+	if (!ecdh(remote_pk, secret)) {
+		return false;
+	}
+	std::array<std::byte, SK_SIZE> secret_bin;
+	if (!convert_sk_to_binary(secret, secret_bin)) {
+		return false;
+	}
+	std::copy(std::cbegin(secret_bin), std::cbegin(secret_bin) + sizeof(sesame_secret), std::begin(sesame_secret));
+
 	return true;
 }
 
@@ -83,6 +103,24 @@ Ecc::convert_binary_to_pk(const std::array<std::byte, PK_SIZE>& binary, api_wrap
 		DEBUG_PRINTF("%d: ecp_check_pubkey failed", mbrc);
 		return false;
 	}
+	return true;
+}
+
+bool
+Ecc::load_key(const std::array<std::byte, 32>& privkey) {
+	if (int mbrc = mbedtls_mpi_read_binary(&sk, to_cptr(privkey), privkey.size()); mbrc != 0) {
+		DEBUG_PRINTLN("%d: Failed to mpi read bibary", mbrc);
+		return false;
+	}
+	if (int mbrc = mbedtls_ecp_check_privkey(&ec_grp, &sk); mbrc != 0) {
+		DEBUG_PRINTLN("%d: Invalid secret key", mbrc);
+		return false;
+	}
+	if (int mbrc = mbedtls_ecp_mul(&ec_grp, &pk, &sk, &ec_grp->G, mbedtls_ctr_drbg_random, &Random::rng_ctx); mbrc != 0) {
+		DEBUG_PRINTLN("%d: Failed to derive public key", mbrc);
+		return false;
+	}
+	have_keypair = true;
 	return true;
 }
 
