@@ -154,7 +154,7 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					}
 					break;
 				default:
-					DEBUG_PRINTF("%u: Unsupported item on response\n", static_cast<uint8_t>(msg->item_code));
+					DEBUG_PRINTLN("Unsupported response: %s", util::bin2hex(transport.data(), transport.data_size()).c_str());
 					break;
 			}
 			break;

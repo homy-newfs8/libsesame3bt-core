@@ -231,21 +231,25 @@ class Sesame {
 		uint32_t timestamp;
 		mecha_status_5_t mecha_status;
 	};
-	struct __attribute__((packed)) os3_registration_t {
+	struct __attribute__((packed)) os3_cmd_registration_t {
 		std::array<std::byte, PK_SIZE> public_key;
 		uint32_t timestamp;
 	};
-	struct __attribute__((packed)) command_os3_t {
-		item_code_t item_code;
-		union __attribute__((packed)) {
-			os3_registration_t registration;
-		} payload;
+	struct __attribute__((packed)) os3_operation_tag_t {
+		uint8_t len;
+		char data[MAX_CMD_TAG_SIZE_OS3];
+	};
+	struct __attribute__((packed)) os3_cmd_login_t {
+		std::array<std::byte, 4> auth_code;
 	};
 	struct __attribute__((packed)) response_registration_5_t {
 		result_code_t result;
 		mecha_status_5_t mecha_status;
 		mecha_setting_5_t mecha_setting;
 		std::array<std::byte, PK_SIZE> public_key;
+	};
+	struct __attribute__((packed)) response_os3_t {
+		result_code_t result;
 	};
 
  private:

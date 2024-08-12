@@ -9,8 +9,8 @@ SesameServerCore::SesameServerCore(SesameBLEBackend& backend) : impl(std::make_u
 SesameServerCore::~SesameServerCore() {}
 
 void
-SesameServerCore::begin_activation() {
-	impl->begin_activation();
+SesameServerCore::on_subscribed() {
+	impl->on_subscribed();
 }
 
 void
@@ -28,6 +28,15 @@ SesameServerCore::set_on_registration_callback(registration_callback_t callback)
 	impl->set_on_registration_callback(callback);
 }
 
+void
+SesameServerCore::set_on_command_callback(command_callback_t callback) {
+	impl->set_on_command_callback(callback);
+}
+
+bool
+SesameServerCore::is_registered() {
+	return impl->is_registered();
+}
 bool
 SesameServerCore::generate_keypair() {
 	return impl->generate_keypair();

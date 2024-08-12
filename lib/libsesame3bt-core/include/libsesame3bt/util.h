@@ -41,6 +41,10 @@ inline std::string
 bin2hex(const std::array<std::byte, N> data, bool upper = false) {
 	return bin2hex(data.data(), data.size(), upper);
 }
+inline std::string
+bin2hex(const std::string_view data, bool upper = false) {
+	return bin2hex(reinterpret_cast<const std::byte*>(data.data()), data.size(), upper);
+}
 
 template <size_t N>
 static inline uint8_t*

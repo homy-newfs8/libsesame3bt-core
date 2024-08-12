@@ -62,6 +62,7 @@ parse_advertisement(std::string_view manu_data, std::string_view name, uint8_t (
 			}
 		}
 	}
+	DEBUG_PRINTLN("manu data=%s", util::bin2hex(manu_data).c_str());
 	return {model, flags, true};
 }
 

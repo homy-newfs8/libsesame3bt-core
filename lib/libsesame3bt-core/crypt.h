@@ -46,13 +46,12 @@ class CryptHandler {
 	bool is_key_shared() const { return key_prepared; }
 	bool decrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
 	bool encrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
-	bool set_session_key(const std::byte* key, size_t key_size);
-	void init_endec_iv(const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,
-	                   const std::byte (&remote_nonce)[Sesame::TOKEN_SIZE]) {
-		std::visit([local_nonce, remote_nonce, this](auto& v) { v.init_endec_iv(local_nonce, remote_nonce, enc_iv, dec_iv); },
-		           iv_handler);
-	}
+	bool set_session_key(const std::byte* key,
+	                     size_t key_size,
+	                     const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,
+	                     const std::byte (&remote_nonce)[Sesame::TOKEN_SIZE]);
 	void reset_session_key();
+	bool verify_auth_code(const std::byte* code) const;
 
  private:
 	std::variant<OS3IVHandler, OS2IVHandler> iv_handler;
@@ -60,6 +59,7 @@ class CryptHandler {
 	static constexpr std::array<std::byte, 1> auth_add_data{};
 	std::array<std::byte, 13> enc_iv;
 	std::array<std::byte, 13> dec_iv;
+	std::array<std::byte, 4> auth_code;
 	bool key_prepared = false;
 };
 

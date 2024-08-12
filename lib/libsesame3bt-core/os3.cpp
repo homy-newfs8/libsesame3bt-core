@@ -70,11 +70,10 @@ OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		client->disconnect();
 		return;
 	}
-	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
+	if (!crypt.set_session_key(session_key.data(), session_key.size(), {}, msg->token)) {
 		client->disconnect();
 		return;
 	}
-	crypt.init_endec_iv(std::array<std::byte, Sesame::TOKEN_SIZE>{}, msg->token);
 	if (send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false)) {
 		client->update_state(state_t::authenticating);
 	} else {
