@@ -20,8 +20,8 @@ constexpr size_t REGISTERED_DEVICE_DATA_SIZE = 23;
 
 template <typename T>
 const std::byte*
-to_bytes(const T& t) {
-	return reinterpret_cast<const std::byte*>(&t);
+to_bytes(const T* t) {
+	return reinterpret_cast<const std::byte*>(t);
 }
 
 }  // namespace
@@ -124,7 +124,7 @@ SesameServerCoreImpl::handle_registration(const std::byte* payload, size_t size)
 		return;
 	}
 	DEBUG_PRINTLN("sending registration response (%u)", sizeof(resp));
-	if (!transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(resp), sizeof(resp), false,
+	if (!transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp), sizeof(resp), false,
 	                           crypt)) {
 		return;
 	}
@@ -151,11 +151,15 @@ SesameServerCoreImpl::handle_login(const std::byte* payload, size_t size) {
 		DEBUG_PRINTLN("Failed to send login response");
 	}
 	Sesame::mecha_status_5_t status{};
+	status.in_lock = true;
+	status.battery = 6.2 * 500;
 	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&status), sizeof(status), true,
 	                           crypt)) {
 		DEBUG_PRINTLN("Failed to send mecha status");
 	}
 	Sesame::mecha_setting_5_t settings{};
+	settings.lock_position = 20263;
+	settings.unlock_position = 20157;
 	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&settings), sizeof(settings),
 	                           true, crypt)) {
 		DEBUG_PRINTLN("Failed to send mecha setting");
