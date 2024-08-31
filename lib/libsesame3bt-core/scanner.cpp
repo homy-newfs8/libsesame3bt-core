@@ -17,34 +17,6 @@ const uint8_t WIFI_MODULE_UUID_HEAD[]{0x00, 0x00, 0x00, 0x00, 0x05, 0x5a, 0xfd, 
 }
 
 /**
- * @brief Create data for BLE advertisement.
- *
- * @param model Sesame model
- * @param flag flag value
- * @param uuid 128bit uuid (big endian)
- * @return tuple of "manufacturer data" and "local name"
- */
-std::tuple<std::string, std::string>
-create_advertisement_data_os3(Sesame::model_t model, std::byte flag, const uint8_t (&uuid)[16]) {
-	DEBUG_PRINTLN("c uuid=%s", util::bin2hex(uuid).c_str());
-	std::string manu;
-	manu.push_back(static_cast<char>(Sesame::COMPANY_ID & 0xff));
-	manu.push_back(static_cast<char>(Sesame::COMPANY_ID >> 8));
-	manu.push_back(static_cast<char>(model));
-	manu.push_back(0);
-	manu.push_back(static_cast<char>(flag));
-	manu.append(std::cbegin(uuid), std::cend(uuid));
-
-	uint8_t b64[25];
-	size_t out_len;
-	if (int mbrc = mbedtls_base64_encode(b64, sizeof(b64), &out_len, uuid, sizeof(uuid)); mbrc != 0) {
-		DEBUG_PRINTLN("This cannot be happened...");
-	}
-	std::string name{reinterpret_cast<const char*>(b64), 22};
-	return std::make_tuple(manu, name);
-}
-
-/**
  * @brief
  * Convert BLE advertisement data and name to model, flags byte, UUID.
  * @param manu_data BLE manufacturer data prepended with 16-bit uuid

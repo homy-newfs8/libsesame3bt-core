@@ -8,8 +8,8 @@
 namespace libsesame3bt::core {
 
 class SesameServerCoreImpl;
-
 using registration_callback_t = std::function<void(const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
+
 using command_callback_t = std::function<Sesame::result_code_t(Sesame::item_code_t cmd, const std::string& tag)>;
 
 class SesameServerCore {
@@ -18,6 +18,9 @@ class SesameServerCore {
 	SesameServerCore(const SesameServerCore&) = delete;
 	SesameServerCore& operator=(const SesameServerCore&) = delete;
 	virtual ~SesameServerCore();
+
+	bool begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
+	void update();
 
 	bool generate_keypair();
 	bool load_key(const std::array<std::byte, Sesame::SK_SIZE>& privkey);
@@ -30,6 +33,8 @@ class SesameServerCore {
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);
+
+	std::tuple<std::string, std::string> create_advertisement_data_os3();
 
  private:
 	std::unique_ptr<SesameServerCoreImpl> impl;

@@ -8,6 +8,16 @@ SesameServerCore::SesameServerCore(SesameBLEBackend& backend) : impl(std::make_u
 
 SesameServerCore::~SesameServerCore() {}
 
+bool
+SesameServerCore::begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]) {
+	return impl->begin(model, uuid);
+}
+
+void
+SesameServerCore::update() {
+	impl->update();
+}
+
 void
 SesameServerCore::on_subscribed() {
 	impl->on_subscribed();
@@ -31,6 +41,11 @@ SesameServerCore::set_on_registration_callback(registration_callback_t callback)
 void
 SesameServerCore::set_on_command_callback(command_callback_t callback) {
 	impl->set_on_command_callback(callback);
+}
+
+std::tuple<std::string, std::string>
+SesameServerCore::create_advertisement_data_os3() {
+	return impl->create_advertisement_data_os3();
 }
 
 bool

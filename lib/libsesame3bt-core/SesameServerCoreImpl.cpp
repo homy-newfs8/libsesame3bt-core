@@ -1,4 +1,5 @@
 #include "SesameServerCoreImpl.h"
+#include <mbedtls/base64.h>
 #include <string_view>
 #include "Sesame.h"
 #include "debug.h"
@@ -18,6 +19,8 @@ constexpr size_t TOKEN_SIZE = Sesame::TOKEN_SIZE;
 constexpr size_t IV_COUNTER_SIZE = 5;
 constexpr size_t REGISTERED_DEVICE_DATA_SIZE = 23;
 
+constexpr uint32_t SEND_INITIAL_INTERVAL = 0;
+
 template <typename T>
 const std::byte*
 to_bytes(const T* t) {
@@ -33,6 +36,14 @@ using util::to_ptr;
 SesameServerCoreImpl::SesameServerCoreImpl(SesameBLEBackend& backend, SesameServerCore& core) : core(core), transport(backend) {}
 
 bool
+SesameServerCoreImpl::begin(Sesame::model_t model, const uint8_t (&uuid)[16]) {
+	this->model = model;
+	std::copy(std::cbegin(uuid), std::cend(uuid), std::begin(this->uuid));
+
+	return false;
+}
+
+bool
 SesameServerCoreImpl::generate_keypair() {
 	if (!ecc.generate_keypair()) {
 		return false;
@@ -41,19 +52,26 @@ SesameServerCoreImpl::generate_keypair() {
 }
 
 void
-SesameServerCoreImpl::on_subscribed() {
-	Random::get_random(nonce);
+SesameServerCoreImpl::send_initial() {
+	DEBUG_PRINTLN("send publish/initial");
 	Sesame::publish_initial_t msg;
 	std::copy(std::cbegin(nonce), std::cend(nonce), msg.token);
 	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::initial, reinterpret_cast<const std::byte*>(&msg),
 	                           sizeof(msg), false, crypt)) {
 		DEBUG_PRINTLN("Failed to publish initial");
 	}
+}
+
+void
+SesameServerCoreImpl::on_subscribed() {
+	Random::get_random(nonce);
+	send_initial();
 	if (is_registered()) {
 		if (!prepare_session_key()) {
 			return;
 		}
 	}
+	state = state_t::waiting_login;
 }
 
 void
@@ -187,6 +205,15 @@ SesameServerCoreImpl::handle_cmd_with_tag(Sesame::item_code_t cmd, const std::by
 	}
 }
 
+void
+SesameServerCoreImpl::set_state(state_t state) {
+	if (this->state == state) {
+		return;
+	}
+	this->state = state;
+	this->last_state_changed = millis();
+}
+
 bool
 SesameServerCoreImpl::export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, 32>& privkey) {
 	bool rc = ecc.export_pk(pubkey);
@@ -218,9 +245,48 @@ SesameServerCoreImpl::prepare_session_key() {
 	return true;
 }
 
+/**
+ * @brief Create data for BLE advertisement.
+ *
+ * @return tuple of "manufacturer data" and "local name"
+ */
+std::tuple<std::string, std::string>
+SesameServerCoreImpl::create_advertisement_data_os3() {
+	DEBUG_PRINTLN("c uuid=%s", util::bin2hex(uuid).c_str());
+	std::string manu;
+	manu.push_back(static_cast<char>(Sesame::COMPANY_ID & 0xff));
+	manu.push_back(static_cast<char>(Sesame::COMPANY_ID >> 8));
+	manu.push_back(static_cast<char>(model));
+	manu.push_back(0);
+	manu.push_back(static_cast<char>(registered ? 1 : 0));
+	manu.append(std::cbegin(uuid), std::cend(uuid));
+
+	uint8_t b64[25];
+	size_t out_len;
+	if (int mbrc = mbedtls_base64_encode(b64, sizeof(b64), &out_len, uuid, sizeof(uuid)); mbrc != 0) {
+		DEBUG_PRINTLN("This cannot be happened...");
+	}
+	std::string name{reinterpret_cast<const char*>(b64), 22};
+	return std::make_tuple(manu, name);
+}
+
 bool
 SesameServerCoreImpl::load_key(const std::array<std::byte, 32>& privkey) {
 	return ecc.load_key(privkey);
+}
+
+void
+SesameServerCoreImpl::update() {
+	switch (state) {
+		case state_t::waiting_login:
+			if (SEND_INITIAL_INTERVAL) {
+				if (auto elapsed = millis() - last_state_changed; elapsed > SEND_INITIAL_INTERVAL) {
+					send_initial();
+					last_state_changed = millis();
+				}
+			}
+			break;
+	}
 }
 
 }  // namespace libsesame3bt::core
