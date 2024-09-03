@@ -71,7 +71,7 @@ SesameClientCore::on_disconnected() {
 /**
  * @brief Unlock SESAME.
  *
- * @param tag
+ * @param tag TAG value for history entry. Ignoreed on Bot / Bot 2.
  * @return true
  * @return false
  */
@@ -83,7 +83,7 @@ SesameClientCore::unlock(std::string_view tag) {
 /**
  * @brief Lock SESAME.
  *
- * @param tag
+ * @param tag TAG value for history entry. Ignored on Bot / Bot 2.
  * @return true
  * @return false
  */
@@ -93,15 +93,15 @@ SesameClientCore::lock(std::string_view tag) {
 }
 
 /**
- * @brief Click SESAME (for SESAME bot).
+ * @brief Click SESAME (for SESAME Bot / Bot 2).
  *
- * @param tag
+ * @param script_no script number. For Bot, specify zero(no meaning). For Bot 2 specify script number to run (0 to 9), if no value run currently selected script.
  * @return true
  * @return false
  */
 bool
-SesameClientCore::click(std::string_view tag) {
-	return impl->click(tag);
+SesameClientCore::click(const std::optional<uint8_t> script_no) {
+	return impl->click(script_no);
 }
 
 /**
@@ -201,7 +201,7 @@ SesameClientCore::get_setting() const {
 /**
  * @brief Request SESAME to send status
  *
- * @note Not all models support this request (SESAME 5 seems not respond)
+ * @note Not all models support this request (SESAME 5 / Bot 2 seems not respond)
  */
 void
 SesameClientCore::request_status() {

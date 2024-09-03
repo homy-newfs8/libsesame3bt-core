@@ -37,13 +37,7 @@ class SesameClientCoreImpl {
 	void on_disconnected();
 	bool unlock(std::string_view tag);
 	bool lock(std::string_view tag);
-	/**
-	 * @brief Click operation (for Bot only)
-	 *
-	 * @param tag %History tag (But it seems not recorded in bot)
-	 * @return True if the command sent successfully
-	 */
-	bool click(std::string_view tag);
+	bool click(const std::optional<uint8_t> script_no);
 	bool request_history();
 	bool is_session_active() const { return state.load() == state_t::active; }
 	void set_status_callback(status_callback_t callback) { lock_status_callback = callback; }
@@ -83,6 +77,7 @@ class SesameClientCoreImpl {
 	void fire_history_callback(const History& history);
 	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
 	void handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
+	bool is_bot() const { return model == Sesame::model_t::sesame_bot || model == Sesame::model_t::sesame_bot_2; }
 };
 
 }  // namespace libsesame3bt::core
