@@ -19,7 +19,7 @@ class SesameBLEBuffer {
 	friend class SesameBLETransport;
 
  public:
-	static constexpr size_t MAX_RECV = 128;
+	static constexpr size_t MAX_RECV = 256;
 
 	SesameBLEBuffer() { reset(); }
 	void reset() {
@@ -45,8 +45,9 @@ class SesameBLETransport {
 	                 const std::byte* data,
 	                 size_t data_size,
 	                 bool is_crypted,
-	                 CryptHandler& crypt);
-	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt);
+	                 CryptHandler& crypt,
+	                 bool as_peripheral = false);
+	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt, bool as_peripheral = false);
 	void disconnect();
 	void reset();
 	const std::byte* data() { return buffer.recv_buffer.data(); }
