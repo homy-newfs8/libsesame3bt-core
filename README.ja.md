@@ -1,8 +1,8 @@
 # libsesame3bt-core
-SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのライブラリ
+SESAME 5(PRO)/Bot2/3/4/bot/サイクルをBluetooth経由で制御するためのライブラリ
 
 ## 概要
-このライブラリはBluetooth LE接続で[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。本ライブラリはSESAMEのメッセージ処理部分のみが含まれています。本ライブラリは[Mbed TLS](https://github.com/Mbed-TLS/mbedtls)に依存しています。
+このライブラリはBluetooth LE接続で[CANDY HOUSE](https://jp.candyhouse.co/)社製のスマートロックSESAME 5、SESAME 5 PRO、SESAME Bot 2、SESAME 3、SESAME 4、SESAME bot、SESAME サイクルを制御するためのライブラリです。本ライブラリはSESAMEのメッセージ処理部分のみが含まれています。本ライブラリは[Mbed TLS](https://github.com/Mbed-TLS/mbedtls)に依存しています。
 
 実行する環境に合わせてフレームワークやBLEライブラリを組み合わせることが可能です。
 
@@ -11,7 +11,7 @@ SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのラ�
 
 以下の機能を実行できます。
 
-- SESAMEのスキャン
+- SESAMEのBLE Advertisement データの解析
 - SESAME状態の受信
 - SESAMEの操作(施錠、開錠)
 
@@ -19,6 +19,7 @@ SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのラ�
 以下の機種に対応しています。
 - [SESAME 5](https://jp.candyhouse.co/products/sesame5)
 - [SESAME 5 PRO](https://jp.candyhouse.co/products/sesame5-pro)
+- [SESAME Bot 2](https://jp.candyhouse.co/products/sesamebot2)
 - [SESAME bot](https://jp.candyhouse.co/products/sesame3-bot)
 - [SESAME 3](https://jp.candyhouse.co/products/sesame3)
 - [SESAME 4](https://jp.candyhouse.co/products/sesame4)
@@ -29,7 +30,7 @@ SESAME 5(PRO)/3/4/bot/サイクルをBluetooth経由で制御するためのラ�
 ## 開発環境
 以下のデバイスで開発しました。
 - [M5StickC](https://docs.m5stack.com/en/core/m5stickc)
-- [M5Atom Lite](https://docs.m5stack.com/en/core/atom_lite)
+- [Seeed Studio XIAO ESP32C3](https://wiki.seeedstudio.com/XIAO_ESP32C3_Getting_Started/)
 
 ## 使用方法
 - 本ライブラリは開発環境[PlatformIO](https://platformio.org/)での利用を前提としています。本ライブラリを利用するプロジェクトのlib_depsに本リポジトリのURL等を指定して組込み可能です。

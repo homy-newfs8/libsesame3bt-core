@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.7.0] 2024-09-14
+
+- Support SESAME Bot 2
+- Many structural changes to implement encrpyt / decrypt functionality for device side
+
 ## [v0.6.0] 2024-04-28
 
 - Support SESAME Touch / Bike2 / Open Sensor (Tested on Touch only).

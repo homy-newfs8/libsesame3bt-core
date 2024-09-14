@@ -38,7 +38,7 @@ read_line() {
 bool as_peripheral;
 
 /*
- * コンパイルの確認 および SESAME OS3 用メッセージ複合ツール
+ * コンパイルの確認 および SESAME OS3 用メッセージ復号ツール
  *
  * libsesame3bt-coreの通常の使用方法は https://github.com/homy-newfs8/libsesame3bt を参照願います
  */
