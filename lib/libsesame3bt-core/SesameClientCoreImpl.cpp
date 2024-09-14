@@ -232,7 +232,13 @@ SesameClientCoreImpl::click(const std::optional<uint8_t> script_no) {
 		return false;
 	}
 	if (model == Sesame::model_t::sesame_bot) {
-		return send_cmd_with_tag(Sesame::item_code_t::click, "");
+		if (script_no == 0) {
+			return unlock("");
+		} else if (script_no == 1) {
+			return lock("");
+		} else {
+			return send_cmd_with_tag(Sesame::item_code_t::click, "");
+		}
 	} else {
 		if (script_no.has_value()) {
 			auto v = script_no.value();
