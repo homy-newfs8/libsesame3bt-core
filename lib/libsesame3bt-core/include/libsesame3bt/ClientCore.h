@@ -4,6 +4,7 @@
 #include <ctime>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string_view>
 #include <variant>
 #include "BLEBackend.h"
@@ -90,6 +91,13 @@ class BotSetting {
 class Status {
  public:
 	Status() {}
+	Status(const Sesame::mecha_bot_2_status_t& status, int8_t vol_scale)
+	    : _voltage(status.battery * 2.0f / 1000),
+	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	      _in_lock(status.is_idle),
+	      _in_unlock(!status.is_idle),
+	      _stopped(status.is_idle),
+	      _motor_status(status.is_idle ? Sesame::motor_status_t::idle : Sesame::motor_status_t::locking) {}
 	Status(const Sesame::mecha_status_t::mecha_lock_status_t& status, float voltage, int8_t vol_scale)
 	    : _voltage(voltage),
 	      _batt_pct(voltage_to_pct(voltage * vol_scale)),
@@ -201,13 +209,7 @@ class SesameClientCore {
 	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool unlock(std::string_view tag);
 	bool lock(std::string_view tag);
-	/**
-	 * @brief Click operation (for Bot only)
-	 *
-	 * @param tag %History tag (But it seems not recorded in bot)
-	 * @return True if the command sent successfully
-	 */
-	bool click(std::string_view tag);
+	bool click(const std::optional<uint8_t> script_no = std::nullopt);
 	bool request_history();
 	bool is_session_active() const;
 	void set_status_callback(status_callback_t callback);

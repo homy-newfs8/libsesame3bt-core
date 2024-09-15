@@ -54,6 +54,7 @@ SesameClientCoreImpl::begin(model_t model) {
 		case model_t::sesame_touch:
 		case model_t::remote:
 		case model_t::remote_nano:
+		case model_t::sesame_bot_2:
 			crypt.emplace(std::in_place_type<OS3IVHandler>);
 			handler.emplace(std::in_place_type<OS3Handler>, this, transport, *crypt);
 			break;
@@ -149,7 +150,7 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					}
 					break;
 				default:
-					DEBUG_PRINTLN("Unsupported response: %s", util::bin2hex(transport.data(), transport.data_size()).c_str());
+					DEBUG_PRINTLN("%s: Unsupported item on response", util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
 					break;
 			}
 			break;
@@ -186,11 +187,16 @@ SesameClientCoreImpl::fire_history_callback(const History& history) {
 bool
 SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
-	auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
-	tagchars[0] = std::size(truncated);
-	std::copy(std::begin(truncated), std::end(truncated), &tagchars[1]);
+	if (is_bot()) {
+		tagchars[0] = 0;
+	} else {
+		auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
+		tagchars[0] = std::size(truncated);
+		std::copy(std::begin(truncated), std::end(truncated), &tagchars[1]);
+	}
 	auto tagbytes = reinterpret_cast<std::byte*>(tagchars.data());
-	return handler->send_command(Sesame::op_code_t::async, code, tagbytes, handler->get_cmd_tag_size(tagbytes), true);
+	return handler->send_command(Sesame::op_code_t::async, code, tagbytes,
+	                             handler->get_cmd_tag_size(std::to_integer<size_t>(tagbytes[0])), true);
 }
 
 bool
@@ -216,8 +222,8 @@ SesameClientCoreImpl::lock(std::string_view tag) {
 }
 
 bool
-SesameClientCoreImpl::click(std::string_view tag) {
-	if (model != model_t::sesame_bot) {
+SesameClientCoreImpl::click(const std::optional<uint8_t> script_no) {
+	if (model != model_t::sesame_bot && model != model_t::sesame_bot_2) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;
 	}
@@ -225,7 +231,23 @@ SesameClientCoreImpl::click(std::string_view tag) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
 		return false;
 	}
-	return send_cmd_with_tag(Sesame::item_code_t::click, tag);
+	if (model == Sesame::model_t::sesame_bot) {
+		if (script_no == 0) {
+			return unlock("");
+		} else if (script_no == 1) {
+			return lock("");
+		} else {
+			return send_cmd_with_tag(Sesame::item_code_t::click, "");
+		}
+	} else {
+		if (script_no.has_value()) {
+			auto v = script_no.value();
+			return handler->send_command(Sesame::op_code_t::async, Sesame::item_code_t::click, reinterpret_cast<const std::byte*>(&v),
+			                             sizeof(v), true);
+		} else {
+			return handler->send_command(Sesame::op_code_t::async, Sesame::item_code_t::click, nullptr, 0, true);
+		}
+	}
 }
 
 void
@@ -255,6 +277,7 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::sesame_touch_pro:  // may be
 		case model_t::remote:
 		case model_t::remote_nano:
+		case model_t::sesame_bot_2:
 			return false;
 		default:
 			return true;

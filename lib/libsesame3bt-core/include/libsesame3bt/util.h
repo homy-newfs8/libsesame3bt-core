@@ -14,19 +14,42 @@ std::string_view cleanup_tail_utf8(std::string_view str);
 int8_t nibble(char c);
 char hexchar(int b, bool upper = false);
 
+bool hex2bin(std::string_view str, std::byte* out, size_t limit, size_t& out_len);
+
+template <size_t N>
+bool
+hex2bin(std::string_view str, std::byte (&out)[N], size_t& out_len) {
+	return hex2bin(str, out, N, out_len);
+}
+
+template <size_t N>
+bool
+hex2bin(std::string_view str, std::array<std::byte, N>& out, size_t& out_len) {
+	return hex2bin(str, out.data(), N, out_len);
+}
+
+template <size_t N>
+bool
+hex2bin(std::string_view str, std::byte (&out)[N]) {
+	size_t olen;
+	if (!hex2bin(str, out, olen)) {
+		return false;
+	}
+	if (olen != N) {
+		return false;
+	}
+	return true;
+}
+
 template <size_t N>
 bool
 hex2bin(std::string_view str, std::array<std::byte, N>& out) {
-	if (str.length() != N * 2) {
+	size_t olen;
+	if (!hex2bin(str, out, olen)) {
 		return false;
 	}
-	for (int i = 0; i < N; i++) {
-		int8_t n1 = nibble(str[i * 2]);
-		int8_t n2 = nibble(str[i * 2 + 1]);
-		if (n1 < 0 || n2 < 0) {
-			return false;
-		}
-		out[i] = std::byte{static_cast<uint8_t>((n1 << 4) + n2)};
+	if (olen != N) {
+		return false;
 	}
 	return true;
 }

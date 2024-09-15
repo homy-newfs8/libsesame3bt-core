@@ -11,33 +11,34 @@ using util::to_cptr;
 using util::to_ptr;
 
 bool
-CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size, bool as_peripheral) {
 	if (in_len < CMAC_TAG_SIZE || out_size < in_len - CMAC_TAG_SIZE) {
 		return false;
 	}
+	const auto& iv = as_peripheral ? c2p_iv : p2c_iv;
 	int mbrc;
-	if ((mbrc = mbedtls_ccm_auth_decrypt(&ccm_ctx, in_len - CMAC_TAG_SIZE, to_cptr(dec_iv), dec_iv.size(), to_cptr(auth_add_data),
+	if ((mbrc = mbedtls_ccm_auth_decrypt(&ccm_ctx, in_len - CMAC_TAG_SIZE, to_cptr(iv), iv.size(), to_cptr(auth_add_data),
 	                                     auth_add_data.size(), to_cptr(in), to_ptr(out), to_cptr(&in[in_len - CMAC_TAG_SIZE]),
 	                                     CMAC_TAG_SIZE)) != 0) {
 		DEBUG_PRINTF("%d: auth_decrypt failed\n", mbrc);
 		return false;
 	}
-	update_dec_iv();
+	update_dec_iv(as_peripheral);
 	return true;
 }
 
 bool
-CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size, bool as_peripheral) {
 	if (out_size < in_len + CMAC_TAG_SIZE) {
 		return false;
 	}
+	const auto& iv = as_peripheral ? p2c_iv : c2p_iv;
 	int rc;
-	if ((rc = mbedtls_ccm_encrypt_and_tag(&ccm_ctx, in_len, to_cptr(enc_iv), enc_iv.size(), to_cptr(auth_add_data),
-	                                      auth_add_data.size(), to_cptr(in), to_ptr(out), to_ptr(&out[in_len]), CMAC_TAG_SIZE)) !=
-	    0) {
+	if ((rc = mbedtls_ccm_encrypt_and_tag(&ccm_ctx, in_len, to_cptr(iv), iv.size(), to_cptr(auth_add_data), auth_add_data.size(),
+	                                      to_cptr(in), to_ptr(out), to_ptr(&out[in_len]), CMAC_TAG_SIZE)) != 0) {
 		DEBUG_PRINTF("%d: encrypt_and_tag failed\n", rc);
 	}
-	update_enc_iv();
+	update_enc_iv(as_peripheral);
 	return true;
 }
 
@@ -51,8 +52,7 @@ CryptHandler::set_session_key(const std::byte* key,
 		return false;
 	}
 	std::copy(key, key + auth_code.size(), std::begin(auth_code));
-	std::visit([local_nonce, remote_nonce, this](auto& v) { v.init_endec_iv(local_nonce, remote_nonce, enc_iv, dec_iv); },
-	           iv_handler);
+	init_endec_iv(local_nonce, remote_nonce);
 	key_prepared = true;
 	return true;
 }

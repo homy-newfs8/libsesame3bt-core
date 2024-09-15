@@ -59,7 +59,7 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 void
 OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_initial_t)) {
-		DEBUG_PRINTF("%u: short response initial data\n", in_len);
+		DEBUG_PRINTLN("%u: short response initial data", in_len);
 		client->disconnect();
 		return;
 	}
@@ -90,15 +90,15 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	}
 	auto msg = reinterpret_cast<const Sesame::response_login_5_t*>(in);
 	if (msg->result != Sesame::result_code_t::success) {
-		DEBUG_PRINTF("%u: login response was not success\n", static_cast<uint8_t>(msg->result));
+		DEBUG_PRINTLN("%u: login response was not success", static_cast<uint8_t>(msg->result));
 		client->disconnect();
 		return;
 	}
 	time_t t = msg->timestamp;
 	struct tm tm;
 	gmtime_r(&t, &tm);
-	DEBUG_PRINTF("time=%04d/%02d/%02d %02d:%02d:%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
-	             tm.tm_sec);
+	DEBUG_PRINTLN("time=%04d/%02d/%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
+	              tm.tm_sec);
 	setting_received = !client->has_setting();  // treat as setting received
 	status_received = false;
 }
@@ -106,7 +106,7 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 void
 OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_setting_5_t)) {
-		DEBUG_PRINTF("%u: Unexpected size of mecha setting, ignored\n", in_len);
+		DEBUG_PRINTLN("%u: Unexpected size of mecha setting, ignored", in_len);
 		return;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
@@ -119,12 +119,18 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 
 void
 OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
-	if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
-		DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored\n", in_len);
-		return;
+	DEBUG_PRINTLN("mecha: %s", util::bin2hex(in, in_len).c_str());
+	if (client->model == Sesame::model_t::sesame_bot_2) {
+		const auto* msg = reinterpret_cast<const Sesame::mecha_bot_2_status_t*>(in);
+		client->sesame_status = {*msg, voltage_scale(client->model)};
+	} else {
+		if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
+			DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored", in_len);
+			return;
+		}
+		const auto* msg = reinterpret_cast<const Sesame::publish_mecha_status_5_t*>(in);
+		client->sesame_status = {msg->status, voltage_scale(client->model)};
 	}
-	auto msg = reinterpret_cast<const Sesame::publish_mecha_status_5_t*>(in);
-	client->sesame_status = {msg->status, voltage_scale(client->model)};
 	client->fire_status_callback();
 	status_received = true;
 	if (client->state != state_t::active && setting_received && status_received) {
@@ -136,17 +142,17 @@ void
 OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 	History history{};
 	if (in_len < 1) {
-		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
+		DEBUG_PRINTLN("%u: Unexpected size of history, ignored", in_len);
 		client->fire_history_callback(history);
 		return;
 	}
 	if (static_cast<Sesame::result_code_t>(in[0]) != Sesame::result_code_t::success) {
-		DEBUG_PRINTF("%u: Failure response to request history\n", static_cast<uint8_t>(in[0]));
+		DEBUG_PRINTLN("%u: Failure response to request history", static_cast<uint8_t>(in[0]));
 		client->fire_history_callback(history);
 		return;
 	}
 	if (in_len < sizeof(Sesame::response_history_5_t)) {
-		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
+		DEBUG_PRINTLN("%u: Unexpected size of history, ignored", in_len);
 		client->fire_history_callback(history);
 		return;
 	}

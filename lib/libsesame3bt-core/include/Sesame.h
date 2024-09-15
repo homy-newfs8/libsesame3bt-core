@@ -38,6 +38,7 @@ class Sesame {
 		ble_connector = 11,
 		remote = 14,
 		remote_nano = 15,
+		sesame_bot_2 = 17,
 	};
 	enum class motor_status_t : uint8_t { idle = 0, locking, holding, unlocking };
 	enum class op_code_t : uint8_t {
@@ -120,7 +121,7 @@ class Sesame {
 
 	static os_ver_t get_os_ver(model_t model) {
 		int8_t v = static_cast<int8_t>(model);
-		if (v < 0 || v > static_cast<int8_t>(model_t::remote_nano)) {
+		if (v < 0 || v > static_cast<int8_t>(model_t::sesame_bot_2)) {
 			return os_ver_t::unknown;
 		} else if (v >= static_cast<int8_t>(model_t::sesame_3) && v <= static_cast<int8_t>(model_t::sesame_4)) {
 			return os_ver_t::os2;
@@ -175,6 +176,12 @@ class Sesame {
 			bool is_battery_critical : 1;
 		} bot;
 		std::byte data[8]{};
+	};
+	struct __attribute__((packed)) mecha_bot_2_status_t {
+		uint16_t battery;
+		bool unknown1 : 1;
+		bool unknown2 : 1;
+		bool is_idle : 1;
 	};
 	struct __attribute__((packed)) mecha_status_5_t {
 		int16_t battery;
