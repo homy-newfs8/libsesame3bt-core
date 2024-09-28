@@ -14,7 +14,7 @@ using command_callback_t = std::function<Sesame::result_code_t(Sesame::item_code
 
 class SesameServerCore {
  public:
-	SesameServerCore(SesameBLEBackend& backend);
+	SesameServerCore(ServerBLEBackend& backend);
 	SesameServerCore(const SesameServerCore&) = delete;
 	SesameServerCore& operator=(const SesameServerCore&) = delete;
 	virtual ~SesameServerCore();
@@ -26,10 +26,11 @@ class SesameServerCore {
 	bool load_key(const std::array<std::byte, Sesame::SK_SIZE>& privkey);
 	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey);
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
-	void on_subscribed();
-	void on_received(const std::byte*, size_t);
-	void on_disconnected();
+	void on_subscribed(uint16_t session_id);
+	void on_received(uint16_t session_id, const std::byte*, size_t);
+	void on_disconnected(uint16_t session_id);
 	bool is_registered();
+	size_t get_session_count() const;
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);

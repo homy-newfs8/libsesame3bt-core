@@ -33,7 +33,11 @@ using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
-SesameServerCoreImpl::SesameServerCoreImpl(SesameBLEBackend& backend, SesameServerCore& core) : core(core), transport(backend) {}
+SesameServerCoreImpl::SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions)
+    : core(core), ble_backend(backend), max_sessions(max_sessions) {
+	session_ids = new std::optional<uint16_t>[max_sessions];
+	sessions = new ServerSession*[max_sessions];
+}
 
 bool
 SesameServerCoreImpl::begin(Sesame::model_t model, const uint8_t (&uuid)[16]) {
@@ -52,38 +56,46 @@ SesameServerCoreImpl::generate_keypair() {
 }
 
 void
-SesameServerCoreImpl::send_initial() {
+SesameServerCoreImpl::send_initial(ServerSession* session) {
 	DEBUG_PRINTLN("send publish/initial");
 	Sesame::publish_initial_t msg;
-	std::copy(std::cbegin(nonce), std::cend(nonce), msg.token);
-	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::initial, reinterpret_cast<const std::byte*>(&msg),
-	                           sizeof(msg), false, crypt)) {
+	std::copy(std::cbegin(session->nonce), std::cend(session->nonce), msg.token);
+	if (!session->transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::initial,
+	                                    reinterpret_cast<const std::byte*>(&msg), sizeof(msg), false, session->crypt)) {
 		DEBUG_PRINTLN("Failed to publish initial");
 	}
 }
 
 void
-SesameServerCoreImpl::on_subscribed() {
-	Random::get_random(nonce);
-	send_initial();
+SesameServerCoreImpl::on_subscribed(uint16_t session_id) {
+	ServerSession* session = create_session(session_id);
+	if (session == nullptr) {
+		return;
+	}
+	Random::get_random(session->nonce);
+	send_initial(session);
 	if (is_registered()) {
-		if (!prepare_session_key()) {
+		if (!prepare_session_key(session)) {
 			return;
 		}
 	}
-	state = state_t::waiting_login;
+	set_state(session, session_state_t::waiting_login);
 }
 
 void
-SesameServerCoreImpl::on_received(const std::byte* data, size_t size) {
+SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, size_t size) {
+	ServerSession* session = get_session(session_id);
+	if (session == nullptr) {
+		return;
+	}
 	using decode_result_t = SesameBLETransport::decode_result_t;
 	DEBUG_PRINTLN("received %u", size);
-	auto rc = transport.decode(data, size, crypt);
+	auto rc = session->transport.decode(data, size, session->crypt);
 	if (rc != decode_result_t::received) {
 		return;
 	}
-	data = transport.data();
-	size = transport.data_size();
+	data = session->transport.data();
+	size = session->transport.data_size();
 
 	if (size < 1) {
 		DEBUG_PRINTLN("Too short command ignored");
@@ -93,15 +105,15 @@ SesameServerCoreImpl::on_received(const std::byte* data, size_t size) {
 	auto code = static_cast<item_code_t>(data[0]);
 	switch (code) {
 		case item_code_t::registration:
-			handle_registration(data + 1, size - 1);
+			handle_registration(session, data + 1, size - 1);
 			break;
 		case item_code_t::login:
-			handle_login(data + 1, size - 1);
+			handle_login(session, data + 1, size - 1);
 			break;
 		case item_code_t::lock:
 		case item_code_t::unlock:
 		case item_code_t::click:
-			handle_cmd_with_tag(code, data + 1, size - 1);
+			handle_cmd_with_tag(session, code, data + 1, size - 1);
 			break;
 		default:
 			DEBUG_PRINTLN("Unhandled item %u", static_cast<uint8_t>(code));
@@ -110,10 +122,19 @@ SesameServerCoreImpl::on_received(const std::byte* data, size_t size) {
 }
 
 void
-SesameServerCoreImpl::on_disconnected() {}
+SesameServerCoreImpl::on_disconnected(uint16_t session_id) {
+	for (size_t i = 0; i < max_sessions; i++) {
+		if (session_ids[i] == session_id) {
+			session_ids[i].reset();
+			delete sessions[i];
+			sessions[i] = nullptr;
+			break;
+		}
+	}
+}
 
 void
-SesameServerCoreImpl::handle_registration(const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_registration(ServerSession* session, const std::byte* payload, size_t size) {
 	if (size != sizeof(Sesame::os3_cmd_registration_t)) {
 		DEBUG_PRINTLN("%u: registration packet length mismatch, ignored", size);
 		return;
@@ -131,7 +152,7 @@ SesameServerCoreImpl::handle_registration(const std::byte* payload, size_t size)
 	if (!ecc.derive_secret(cmd->public_key, secret)) {
 		return;
 	}
-	if (!prepare_session_key()) {
+	if (!prepare_session_key(session)) {
 		return;
 	}
 	if (on_registration_callback) {
@@ -142,50 +163,51 @@ SesameServerCoreImpl::handle_registration(const std::byte* payload, size_t size)
 		return;
 	}
 	DEBUG_PRINTLN("sending registration response (%u)", sizeof(resp));
-	if (!transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp), sizeof(resp), false,
-	                           crypt)) {
+	if (!session->transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp), sizeof(resp),
+	                                    false, session->crypt)) {
 		return;
 	}
 	DEBUG_PRINTLN("registration done");
 }
 
 void
-SesameServerCoreImpl::handle_login(const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_login(ServerSession* session, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_login");
 	if (size != sizeof(Sesame::os3_cmd_login_t)) {
 		DEBUG_PRINTLN("login payload length mismatch");
 		return;
 	}
-	if (!crypt.is_key_shared()) {
+	if (!session->crypt.is_key_shared()) {
 		DEBUG_PRINTLN("login invalid state");
 		return;
 	}
-	if (!crypt.verify_auth_code(payload)) {
+	if (!session->crypt.verify_auth_code(payload)) {
 		DEBUG_PRINTLN("authentication failed");
 		return;
 	}
 	Sesame::response_login_5_t resp{};
-	if (!transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::login, to_bytes(&resp), sizeof(resp), true, crypt)) {
+	if (!session->transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::login, to_bytes(&resp), sizeof(resp), true,
+	                                    session->crypt)) {
 		DEBUG_PRINTLN("Failed to send login response");
 	}
 	Sesame::mecha_status_5_t status{};
 	status.in_lock = true;
 	status.battery = 6.2 * 500;
-	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&status), sizeof(status), true,
-	                           crypt)) {
+	if (!session->transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&status),
+	                                    sizeof(status), true, session->crypt)) {
 		DEBUG_PRINTLN("Failed to send mecha status");
 	}
 	Sesame::mecha_setting_5_t settings{};
 	settings.lock_position = 20263;
 	settings.unlock_position = 20157;
-	if (!transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&settings), sizeof(settings),
-	                           true, crypt)) {
+	if (!session->transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&settings),
+	                                    sizeof(settings), true, session->crypt)) {
 		DEBUG_PRINTLN("Failed to send mecha setting");
 	}
 }
 
 void
-SesameServerCoreImpl::handle_cmd_with_tag(Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_cmd_with_tag(ServerSession* session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_cmd");
 	if (size == 0) {
 		DEBUG_PRINTLN("Too short command, ignored");
@@ -200,18 +222,18 @@ SesameServerCoreImpl::handle_cmd_with_tag(Sesame::item_code_t cmd, const std::by
 	} else {
 		res.result = Sesame::result_code_t::not_supported;
 	}
-	if (!transport.send_notify(Sesame::op_code_t::response, cmd, to_bytes(&res), sizeof(res), true, crypt)) {
+	if (!session->transport.send_notify(Sesame::op_code_t::response, cmd, to_bytes(&res), sizeof(res), true, session->crypt)) {
 		DEBUG_PRINTLN("Failed to send response to cmd");
 	}
 }
 
 void
-SesameServerCoreImpl::set_state(state_t state) {
-	if (this->state == state) {
+SesameServerCoreImpl::set_state(ServerSession* session, session_state_t state) {
+	if (session->state == state) {
 		return;
 	}
-	this->state = state;
-	this->last_state_changed = millis();
+	session->state = state;
+	session->last_state_changed = millis();
 }
 
 bool
@@ -231,18 +253,59 @@ SesameServerCoreImpl::set_registered(const std::array<std::byte, Sesame::SECRET_
 }
 
 bool
-SesameServerCoreImpl::prepare_session_key() {
+SesameServerCoreImpl::prepare_session_key(ServerSession* session) {
 	CmacAes128 cmac;
 	std::array<std::byte, Sesame::SECRET_SIZE> session_key;
-	if (!cmac.set_key(secret) || !cmac.update(nonce) || !cmac.finish(session_key)) {
+	if (!cmac.set_key(secret) || !cmac.update(session->nonce) || !cmac.finish(session_key)) {
 		DEBUG_PRINTLN("Failed to generate session key");
 		return false;
 	}
-	if (!crypt.set_session_key(session_key.data(), session_key.size(), {}, nonce)) {
+	if (!session->crypt.set_session_key(session_key.data(), session_key.size(), {}, session->nonce)) {
 		DEBUG_PRINTLN("Failed to init session");
 		return false;
 	}
 	return true;
+}
+
+size_t
+SesameServerCoreImpl::get_session_count() const {
+	size_t count = 0;
+	for (size_t i = 0; i < max_sessions; i++) {
+		if (session_ids[i].has_value()) {
+			count++;
+		}
+	}
+	return count;
+}
+
+ServerSession*
+SesameServerCoreImpl::create_session(uint16_t session_id) {
+	auto* session = get_session(session_id);
+	if (session != nullptr) {
+		DEBUG_PRINTLN("session %u already exists", session_id);
+		return nullptr;
+	}
+	for (size_t i = 0; i < max_sessions; i++) {
+		if (!session_ids[i].has_value()) {
+			sessions[i] = new ServerSession{ble_backend, session_id};
+			session_ids[i] = session_id;
+			DEBUG_PRINTLN("session %u created", session_id);
+			return sessions[i];
+		}
+	}
+	DEBUG_PRINTLN("Too many sessions");
+	return nullptr;
+}
+
+ServerSession*
+SesameServerCoreImpl::get_session(uint16_t session_id) {
+	for (size_t i = 0; i < max_sessions; i++) {
+		if (session_ids[i] == session_id) {
+			return sessions[i];
+		}
+	}
+	DEBUG_PRINTLN("session %u not found", session_id);
+	return nullptr;
 }
 
 /**
@@ -277,15 +340,20 @@ SesameServerCoreImpl::load_key(const std::array<std::byte, 32>& privkey) {
 
 void
 SesameServerCoreImpl::update() {
-	switch (state) {
-		case state_t::waiting_login:
-			if (SEND_INITIAL_INTERVAL) {
-				if (auto elapsed = millis() - last_state_changed; elapsed > SEND_INITIAL_INTERVAL) {
-					send_initial();
-					last_state_changed = millis();
-				}
+	for (size_t i = 0; i < max_sessions; i++) {
+		if (session_ids[i].has_value()) {
+			auto* session = sessions[i];
+			switch (session->state) {
+				case session_state_t::waiting_login:
+					if (SEND_INITIAL_INTERVAL) {
+						if (auto elapsed = millis() - session->last_state_changed; elapsed > SEND_INITIAL_INTERVAL) {
+							send_initial(session);
+							session->last_state_changed = millis();
+						}
+					}
+					break;
 			}
-			break;
+		}
 	}
 }
 

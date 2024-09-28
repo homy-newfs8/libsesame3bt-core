@@ -4,7 +4,7 @@
 
 namespace libsesame3bt::core {
 
-SesameServerCore::SesameServerCore(SesameBLEBackend& backend) : impl(std::make_unique<SesameServerCoreImpl>(backend, *this)) {}
+SesameServerCore::SesameServerCore(ServerBLEBackend& backend) : impl(std::make_unique<SesameServerCoreImpl>(backend, *this, 3)) {}
 
 SesameServerCore::~SesameServerCore() {}
 
@@ -19,18 +19,18 @@ SesameServerCore::update() {
 }
 
 void
-SesameServerCore::on_subscribed() {
-	impl->on_subscribed();
+SesameServerCore::on_subscribed(uint16_t session_id) {
+	impl->on_subscribed(session_id);
 }
 
 void
-SesameServerCore::on_received(const std::byte* data, size_t size) {
-	impl->on_received(data, size);
+SesameServerCore::on_received(uint16_t session_id, const std::byte* data, size_t size) {
+	impl->on_received(session_id, data, size);
 }
 
 void
-SesameServerCore::on_disconnected() {
-	impl->on_disconnected();
+SesameServerCore::on_disconnected(uint16_t session_id) {
+	impl->on_disconnected(session_id);
 }
 
 void
@@ -46,6 +46,11 @@ SesameServerCore::set_on_command_callback(command_callback_t callback) {
 std::tuple<std::string, std::string>
 SesameServerCore::create_advertisement_data_os3() {
 	return impl->create_advertisement_data_os3();
+}
+
+size_t
+SesameServerCore::get_session_count() const {
+	return impl->get_session_count();
 }
 
 bool
