@@ -11,7 +11,7 @@ using util::to_cptr;
 using util::to_ptr;
 
 bool
-CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size, bool as_peripheral) {
+CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
 	if (in_len < CMAC_TAG_SIZE || out_size < in_len - CMAC_TAG_SIZE) {
 		return false;
 	}
@@ -23,12 +23,12 @@ CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t
 		DEBUG_PRINTF("%d: auth_decrypt failed\n", mbrc);
 		return false;
 	}
-	update_dec_iv(as_peripheral);
+	update_dec_iv();
 	return true;
 }
 
 bool
-CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size, bool as_peripheral) {
+CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
 	if (out_size < in_len + CMAC_TAG_SIZE) {
 		return false;
 	}
@@ -38,7 +38,7 @@ CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t
 	                                      to_cptr(in), to_ptr(out), to_ptr(&out[in_len]), CMAC_TAG_SIZE)) != 0) {
 		DEBUG_PRINTF("%d: encrypt_and_tag failed\n", rc);
 	}
-	update_enc_iv(as_peripheral);
+	update_enc_iv();
 	return true;
 }
 

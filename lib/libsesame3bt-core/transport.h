@@ -45,9 +45,8 @@ class SesameBLETransport {
 	                 const std::byte* data,
 	                 size_t data_size,
 	                 bool is_crypted,
-	                 CryptHandler& crypt,
-	                 bool as_peripheral = false);
-	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt, bool as_peripheral = false);
+	                 CryptHandler& crypt);
+	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt);
 	void disconnect();
 	void reset();
 	const std::byte* data() { return buffer.recv_buffer.data(); }
