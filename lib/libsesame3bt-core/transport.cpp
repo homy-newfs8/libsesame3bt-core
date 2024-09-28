@@ -41,7 +41,7 @@ SesameBLETransport::send_data(const std::byte* pkt, size_t pkt_size, bool is_cry
 using decode_result_t = SesameBLETransport::decode_result_t;
 
 decode_result_t
-SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt, bool as_peripheral) {
+SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt) {
 	if (len <= 1) {
 		return decode_result_t::dropped;
 	}
@@ -53,7 +53,7 @@ SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt, 
 	}
 	if (buffer.skipping) {
 		if (h.kind == packet_kind_t::encrypted) {
-			crypt.update_dec_iv(as_peripheral);
+			crypt.update_dec_iv();
 		}
 		return decode_result_t::skipping;
 	}
@@ -61,7 +61,7 @@ SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt, 
 		DEBUG_PRINTLN("Received data too long, skipping");
 		buffer.skipping = true;
 		if (h.kind == packet_kind_t::encrypted) {
-			crypt.update_dec_iv(as_peripheral);
+			crypt.update_dec_iv();
 		}
 		return decode_result_t::skipping;
 	}
@@ -82,8 +82,8 @@ SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt, 
 			return decode_result_t::skipping;
 		}
 		std::array<std::byte, SesameBLEBuffer::MAX_RECV - CryptHandler::CMAC_TAG_SIZE> decrypted{};
-		if (!crypt.decrypt(buffer.recv_buffer.data(), buffer.recv_size, &decrypted[0], buffer.recv_size - CryptHandler::CMAC_TAG_SIZE,
-		                   as_peripheral)) {
+		if (!crypt.decrypt(buffer.recv_buffer.data(), buffer.recv_size, &decrypted[0],
+		                   buffer.recv_size - CryptHandler::CMAC_TAG_SIZE)) {
 			return decode_result_t::skipping;
 		}
 		std::copy(decrypted.cbegin(), decrypted.cbegin() + buffer.recv_size - CryptHandler::CMAC_TAG_SIZE, &buffer.recv_buffer[0]);
@@ -112,8 +112,7 @@ SesameBLETransport::send_notify(Sesame::op_code_t op_code,
                                 const std::byte* data,
                                 size_t data_size,
                                 bool is_crypted,
-                                CryptHandler& crypt,
-                                bool as_peripheral) {
+                                CryptHandler& crypt) {
 	const size_t pkt_size = 2 + data_size + (is_crypted ? Sesame::CMAC_TAG_SIZE : 0);  // 2 for op/item, 4 for encrypted tag
 	std::byte pkt[pkt_size];
 	if (is_crypted) {
@@ -121,7 +120,7 @@ SesameBLETransport::send_notify(Sesame::op_code_t op_code,
 		plain[0] = to_byte(op_code);
 		plain[1] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[2]);
-		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt), as_peripheral)) {
+		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
 			return false;
 		}
 	} else {
