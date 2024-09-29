@@ -34,10 +34,7 @@ using util::to_cptr;
 using util::to_ptr;
 
 SesameServerCoreImpl::SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions)
-    : core(core), ble_backend(backend), max_sessions(max_sessions) {
-	session_ids = new std::optional<uint16_t>[max_sessions];
-	sessions = new ServerSession*[max_sessions];
-}
+    : core(core), ble_backend(backend), vsessions(max_sessions) {}
 
 bool
 SesameServerCoreImpl::begin(Sesame::model_t model, const uint8_t (&uuid)[16]) {
@@ -56,7 +53,7 @@ SesameServerCoreImpl::generate_keypair() {
 }
 
 void
-SesameServerCoreImpl::send_initial(ServerSession* session) {
+SesameServerCoreImpl::send_initial(std::shared_ptr<ServerSession> session) {
 	DEBUG_PRINTLN("send publish/initial");
 	Sesame::publish_initial_t msg;
 	std::copy(std::cbegin(session->nonce), std::cend(session->nonce), msg.token);
@@ -68,7 +65,7 @@ SesameServerCoreImpl::send_initial(ServerSession* session) {
 
 void
 SesameServerCoreImpl::on_subscribed(uint16_t session_id) {
-	ServerSession* session = create_session(session_id);
+	auto session = create_session(session_id);
 	if (session == nullptr) {
 		return;
 	}
@@ -84,7 +81,7 @@ SesameServerCoreImpl::on_subscribed(uint16_t session_id) {
 
 void
 SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, size_t size) {
-	ServerSession* session = get_session(session_id);
+	auto session = get_session(session_id);
 	if (session == nullptr) {
 		return;
 	}
@@ -123,18 +120,17 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 
 void
 SesameServerCoreImpl::on_disconnected(uint16_t session_id) {
-	for (size_t i = 0; i < max_sessions; i++) {
-		if (session_ids[i] == session_id) {
-			session_ids[i].reset();
-			delete sessions[i];
-			sessions[i] = nullptr;
+	for (auto& [id, session] : vsessions) {
+		if (id == session_id) {
+			id.reset();
+			session.reset();
 			break;
 		}
 	}
 }
 
 void
-SesameServerCoreImpl::handle_registration(ServerSession* session, const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_registration(std::shared_ptr<ServerSession> session, const std::byte* payload, size_t size) {
 	if (size != sizeof(Sesame::os3_cmd_registration_t)) {
 		DEBUG_PRINTLN("%u: registration packet length mismatch, ignored", size);
 		return;
@@ -171,7 +167,7 @@ SesameServerCoreImpl::handle_registration(ServerSession* session, const std::byt
 }
 
 void
-SesameServerCoreImpl::handle_login(ServerSession* session, const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_login(std::shared_ptr<ServerSession> session, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_login");
 	if (size != sizeof(Sesame::os3_cmd_login_t)) {
 		DEBUG_PRINTLN("login payload length mismatch");
@@ -207,7 +203,10 @@ SesameServerCoreImpl::handle_login(ServerSession* session, const std::byte* payl
 }
 
 void
-SesameServerCoreImpl::handle_cmd_with_tag(ServerSession* session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
+SesameServerCoreImpl::handle_cmd_with_tag(std::shared_ptr<ServerSession> session,
+                                          Sesame::item_code_t cmd,
+                                          const std::byte* payload,
+                                          size_t size) {
 	DEBUG_PRINTLN("handle_cmd");
 	if (size == 0) {
 		DEBUG_PRINTLN("Too short command, ignored");
@@ -228,7 +227,7 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession* session, Sesame::item_c
 }
 
 void
-SesameServerCoreImpl::set_state(ServerSession* session, session_state_t state) {
+SesameServerCoreImpl::set_state(std::shared_ptr<ServerSession> session, session_state_t state) {
 	if (session->state == state) {
 		return;
 	}
@@ -253,7 +252,7 @@ SesameServerCoreImpl::set_registered(const std::array<std::byte, Sesame::SECRET_
 }
 
 bool
-SesameServerCoreImpl::prepare_session_key(ServerSession* session) {
+SesameServerCoreImpl::prepare_session_key(std::shared_ptr<ServerSession> session) {
 	CmacAes128 cmac;
 	std::array<std::byte, Sesame::SECRET_SIZE> session_key;
 	if (!cmac.set_key(secret) || !cmac.update(session->nonce) || !cmac.finish(session_key)) {
@@ -269,39 +268,33 @@ SesameServerCoreImpl::prepare_session_key(ServerSession* session) {
 
 size_t
 SesameServerCoreImpl::get_session_count() const {
-	size_t count = 0;
-	for (size_t i = 0; i < max_sessions; i++) {
-		if (session_ids[i].has_value()) {
-			count++;
-		}
-	}
-	return count;
+	return std::count_if(vsessions.cbegin(), vsessions.cend(), [](auto& t) { return t.first.has_value(); });
 }
 
-ServerSession*
+std::shared_ptr<ServerSession>
 SesameServerCoreImpl::create_session(uint16_t session_id) {
-	auto* session = get_session(session_id);
+	auto session = get_session(session_id);
 	if (session != nullptr) {
 		DEBUG_PRINTLN("session %u already exists", session_id);
 		return nullptr;
 	}
-	for (size_t i = 0; i < max_sessions; i++) {
-		if (!session_ids[i].has_value()) {
-			sessions[i] = new ServerSession{ble_backend, session_id};
-			session_ids[i] = session_id;
+	for (auto& [id, session] : vsessions) {
+		if (!id.has_value()) {
+			id.emplace(session_id);
+			session = std::make_shared<ServerSession>(ble_backend, session_id);
 			DEBUG_PRINTLN("session %u created", session_id);
-			return sessions[i];
+			return session;
 		}
 	}
 	DEBUG_PRINTLN("Too many sessions");
 	return nullptr;
 }
 
-ServerSession*
+std::shared_ptr<ServerSession>
 SesameServerCoreImpl::get_session(uint16_t session_id) {
-	for (size_t i = 0; i < max_sessions; i++) {
-		if (session_ids[i] == session_id) {
-			return sessions[i];
+	for (auto [id, session] : vsessions) {
+		if (id == session_id) {
+			return session;
 		}
 	}
 	DEBUG_PRINTLN("session %u not found", session_id);
@@ -340,9 +333,8 @@ SesameServerCoreImpl::load_key(const std::array<std::byte, 32>& privkey) {
 
 void
 SesameServerCoreImpl::update() {
-	for (size_t i = 0; i < max_sessions; i++) {
-		if (session_ids[i].has_value()) {
-			auto* session = sessions[i];
+	for (auto [id, session] : vsessions) {
+		if (id.has_value()) {
 			switch (session->state) {
 				case session_state_t::waiting_login:
 					if (SEND_INITIAL_INTERVAL) {
