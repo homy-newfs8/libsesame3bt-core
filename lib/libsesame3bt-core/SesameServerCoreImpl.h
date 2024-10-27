@@ -1,6 +1,5 @@
 #pragma once
 #include <cstddef>
-#include <memory>
 #include <optional>
 #include <tuple>
 #include <utility>
@@ -69,17 +68,17 @@ class SesameServerCoreImpl {
 	Sesame::model_t model = Sesame::model_t::unknown;
 	uint8_t uuid[16];
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
-	std::vector<std::pair<std::optional<uint16_t>, std::shared_ptr<ServerSession>>> vsessions;
+	std::vector<std::pair<std::optional<uint16_t>, std::optional<ServerSession>>> vsessions;
 
-	void handle_registration(std::shared_ptr<ServerSession> session, const std::byte* payload, size_t size);
-	void handle_login(std::shared_ptr<ServerSession> session, const std::byte* payload, size_t size);
-	void handle_cmd_with_tag(std::shared_ptr<ServerSession> session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
-	bool prepare_session_key(std::shared_ptr<ServerSession> session);
-	std::shared_ptr<ServerSession> create_session(uint16_t session_id);
-	std::shared_ptr<ServerSession> get_session(uint16_t session_id);
+	void handle_registration(ServerSession& session, const std::byte* payload, size_t size);
+	void handle_login(ServerSession& session, const std::byte* payload, size_t size);
+	void handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
+	bool prepare_session_key(ServerSession& session);
+	ServerSession* create_session(uint16_t session_id);
+	ServerSession* get_session(uint16_t session_id);
 
-	void set_state(std::shared_ptr<ServerSession> session, session_state_t state);
-	void send_initial(std::shared_ptr<ServerSession> session);
+	void set_state(ServerSession& session, session_state_t state);
+	void send_initial(ServerSession& session);
 };
 
 }  // namespace libsesame3bt::core

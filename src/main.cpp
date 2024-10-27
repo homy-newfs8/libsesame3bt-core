@@ -106,7 +106,7 @@ setup() {
 		size_t len;
 		if (util::hex2bin(line, buffer, len)) {
 			Serial.printf("decoding %u bytes\n", len);
-			auto rc = transport.decode(buffer.data(), len, cr, as_peripheral);
+			auto rc = transport.decode(buffer.data(), len, cr);
 			if (rc == decode_result_t::received) {
 				Serial.printf("decoded(%u) ", transport.data_size());
 				Serial.println(util::bin2hex(transport.data(), transport.data_size()).c_str());
