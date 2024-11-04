@@ -14,7 +14,7 @@ using command_callback_t =
 
 class SesameServerCore {
  public:
-	SesameServerCore(ServerBLEBackend& backend);
+	SesameServerCore(ServerBLEBackend& backend, int max_sessions);
 	SesameServerCore(const SesameServerCore&) = delete;
 	SesameServerCore& operator=(const SesameServerCore&) = delete;
 	virtual ~SesameServerCore();

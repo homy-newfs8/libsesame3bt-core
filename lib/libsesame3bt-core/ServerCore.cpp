@@ -4,7 +4,8 @@
 
 namespace libsesame3bt::core {
 
-SesameServerCore::SesameServerCore(ServerBLEBackend& backend) : impl(std::make_unique<SesameServerCoreImpl>(backend, *this, 3)) {}
+SesameServerCore::SesameServerCore(ServerBLEBackend& backend, int max_sessions)
+    : impl(std::make_unique<SesameServerCoreImpl>(backend, *this, max_sessions)) {}
 
 SesameServerCore::~SesameServerCore() {}
 
