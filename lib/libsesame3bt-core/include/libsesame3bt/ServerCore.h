@@ -26,8 +26,8 @@ class SesameServerCore {
 	bool load_key(const std::array<std::byte, Sesame::SK_SIZE>& privkey);
 	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey);
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
-	void on_subscribed(uint16_t session_id);
-	void on_received(uint16_t session_id, const std::byte*, size_t);
+	bool on_subscribed(uint16_t session_id);
+	bool on_received(uint16_t session_id, const std::byte*, size_t);
 	void on_disconnected(uint16_t session_id);
 	bool is_registered();
 	size_t get_session_count() const;

@@ -13,7 +13,7 @@
 
 namespace libsesame3bt::core {
 
-enum class session_state_t { idle, waiting_login };
+enum class session_state_t { idle, waiting_login, running };
 
 class SesameServerCoreImpl;
 
@@ -34,7 +34,8 @@ class ServerSession : SesameBLEBackend {
 	virtual bool write_to_tx(const uint8_t* data, size_t size) override {
 		return backend.write_to_peripheral(session_id, data, size);
 	};
-	virtual void disconnect() override {}
+	virtual void disconnect() override { backend.disconnect(session_id); }
+	void set_state(session_state_t state);
 };
 
 class SesameServerCoreImpl {
@@ -49,16 +50,19 @@ class SesameServerCoreImpl {
 	bool is_registered() const { return registered; }
 	size_t get_session_count() const;
 
-	void on_subscribed(uint16_t session_id);
-	void on_received(uint16_t session_id, const std::byte* data, size_t size);
+	bool on_subscribed(uint16_t session_id);
+	bool on_received(uint16_t session_id, const std::byte* data, size_t size);
 	void on_disconnected(uint16_t session_id);
 
 	void set_on_registration_callback(registration_callback_t callback) { on_registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { on_command_callback = callback; }
+	void set_authentication_timeout(uint32_t timeout_msec) { auth_timeout = timeout_msec; }
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3();
 
  private:
+	static constexpr uint32_t DEFAULT_AUTH_TIMEOUT_MSEC = 5'000;
+
 	SesameServerCore& core;
 	ServerBLEBackend& ble_backend;
 	Ecc ecc;
@@ -69,16 +73,16 @@ class SesameServerCoreImpl {
 	uint8_t uuid[16];
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
 	std::vector<std::pair<std::optional<uint16_t>, std::optional<ServerSession>>> vsessions;
+	uint32_t auth_timeout = DEFAULT_AUTH_TIMEOUT_MSEC;
 
-	void handle_registration(ServerSession& session, const std::byte* payload, size_t size);
-	void handle_login(ServerSession& session, const std::byte* payload, size_t size);
-	void handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
+	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
+	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);
+	bool handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
 	bool prepare_session_key(ServerSession& session);
 	ServerSession* create_session(uint16_t session_id);
 	ServerSession* get_session(uint16_t session_id);
 
-	void set_state(ServerSession& session, session_state_t state);
-	void send_initial(ServerSession& session);
+	bool send_initial(ServerSession& session);
 };
 
 }  // namespace libsesame3bt::core

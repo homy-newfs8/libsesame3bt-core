@@ -18,14 +18,14 @@ SesameServerCore::update() {
 	impl->update();
 }
 
-void
+bool
 SesameServerCore::on_subscribed(uint16_t session_id) {
-	impl->on_subscribed(session_id);
+	return impl->on_subscribed(session_id);
 }
 
-void
+bool
 SesameServerCore::on_received(uint16_t session_id, const std::byte* data, size_t size) {
-	impl->on_received(session_id, data, size);
+	return impl->on_received(session_id, data, size);
 }
 
 void
