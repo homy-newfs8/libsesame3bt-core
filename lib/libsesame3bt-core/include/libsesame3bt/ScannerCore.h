@@ -5,7 +5,7 @@
 
 namespace libsesame3bt::core {
 
-std::tuple<Sesame::model_t, std::byte, bool> parse_advertisement(std::string_view manufactureData,
+std::tuple<Sesame::model_t, std::byte, bool> parse_advertisement(std::string_view manufacture_data,
                                                                  std::string_view name,
                                                                  uint8_t (&uuid)[16]);
 

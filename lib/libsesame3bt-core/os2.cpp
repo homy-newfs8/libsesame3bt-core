@@ -81,7 +81,6 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 		client->disconnect();
 		return;
 	}
-	crypt.init_endec_iv(local_tok, msg->token);
 	std::array<std::byte, AES_BLOCK_SIZE> tag_response;
 	if (!generate_tag_response(bpk, local_tok, msg->token, tag_response)) {
 		client->disconnect();
@@ -229,7 +228,7 @@ OS2Handler::generate_session_key(const std::array<std::byte, Sesame::TOKEN_SIZE>
 	    !cmac.update(sesame_token) || !cmac.finish(session_key)) {
 		return false;
 	}
-	if (!crypt.set_session_key(session_key.data(), session_key.size())) {
+	if (!crypt.set_session_key(session_key.data(), session_key.size(), local_tok, sesame_token)) {
 		return false;
 	}
 	return true;

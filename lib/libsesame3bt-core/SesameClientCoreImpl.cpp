@@ -316,7 +316,7 @@ SesameClientCoreImpl::handle_publish_pub_key_sesame(const std::byte* in, size_t 
 			RegisteredDevice dev;
 			int rc = mbedtls_base64_decode(dev.uuid, sizeof(dev.uuid), &idlen, b64, sizeof(b64));
 			if (rc != 0 || idlen != sizeof(dev.uuid)) {
-				DEBUG_PRINTF("%s: Failed to decode registered device (OS2)\n", util::bin2hex(b64, sizeof(b64)).c_str());
+				DEBUG_PRINTF("%s: Failed to decode registered device (OS2)\n", util::bin2hex(b64).c_str());
 				continue;
 			}
 			dev.os_ver = Sesame::os_ver_t::os2;

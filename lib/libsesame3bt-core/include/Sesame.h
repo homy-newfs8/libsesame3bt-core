@@ -1,5 +1,6 @@
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cstddef>
 
 namespace libsesame3bt {
@@ -7,10 +8,12 @@ namespace libsesame3bt {
 class Sesame {
  public:
 	static constexpr size_t TOKEN_SIZE = 4;
+	static constexpr uint16_t COMPANY_ID = 0x055a;
 	static inline const char* SESAME3_SRV_UUID{"fd81"};
 	static inline const char* TxUUID{"16860002-a5ae-9856-b6d3-dbb4c676993e"};
 	static inline const char* RxUUID{"16860003-a5ae-9856-b6d3-dbb4c676993e"};
 	static constexpr size_t PK_SIZE = 64;
+	static constexpr size_t SK_SIZE = 32;
 	static constexpr size_t SECRET_SIZE = 16;
 	static constexpr size_t CMAC_TAG_SIZE = 4;
 
@@ -234,6 +237,26 @@ class Sesame {
 		history_type_t type;
 		uint32_t timestamp;
 		mecha_status_5_t mecha_status;
+	};
+	struct __attribute__((packed)) os3_cmd_registration_t {
+		std::array<std::byte, PK_SIZE> public_key;
+		uint32_t timestamp;
+	};
+	struct __attribute__((packed)) os3_operation_tag_t {
+		uint8_t len;
+		char data[MAX_CMD_TAG_SIZE_OS3];
+	};
+	struct __attribute__((packed)) os3_cmd_login_t {
+		std::array<std::byte, 4> auth_code;
+	};
+	struct __attribute__((packed)) response_registration_5_t {
+		result_code_t result;
+		mecha_status_5_t mecha_status;
+		mecha_setting_5_t mecha_setting;
+		std::array<std::byte, PK_SIZE> public_key;
+	};
+	struct __attribute__((packed)) response_os3_t {
+		result_code_t result;
 	};
 
  private:

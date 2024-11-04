@@ -16,7 +16,7 @@ class Random {
 	static bool get_random(std::byte* out, size_t size);
 	template <size_t N>
 	static bool get_random(std::byte (&out)[N]) {
-		return get_random(&out, N);
+		return get_random(out, N);
 	};
 	template <size_t N>
 	static bool get_random(std::array<std::byte, N> out) {
