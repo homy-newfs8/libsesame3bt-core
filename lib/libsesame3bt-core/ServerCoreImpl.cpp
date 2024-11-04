@@ -111,15 +111,33 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 			break;
 		case item_code_t::lock:
 		case item_code_t::unlock:
-		case item_code_t::click:
+		case item_code_t::open:
+		case item_code_t::close:
 			rc = handle_cmd_with_tag(*session, code, data + 1, size - 1);
 			break;
 		default:
-			DEBUG_PRINTLN("Unhandled command %u", static_cast<uint8_t>(code));
+			DEBUG_PRINTLN("Unhandled command %u %s", static_cast<uint8_t>(code), util::bin2hex(data + 1, size - 1).c_str());
 			rc = true;
 			break;
 	}
 	return rc;
+}
+
+static const char*
+cmd_string(Sesame::item_code_t cmd) {
+	using item_code_t = Sesame::item_code_t;
+	switch (cmd) {
+		case item_code_t::lock:
+			return "lock";
+		case item_code_t::unlock:
+			return "unlock";
+		case item_code_t::open:
+			return "open";
+		case item_code_t::close:
+			return "close";
+		default:
+			return "UNKNOWN";
+	}
 }
 
 void
@@ -221,13 +239,12 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 bool
 SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_cmd");
-	if (size == 0) {
+	if (size == 0 || size < static_cast<size_t>(payload[0]) + 1) {
 		DEBUG_PRINTLN("Too short command, ignored");
 		return false;
 	}
 	auto tstr = std::string(reinterpret_cast<const char*>(payload + 1), static_cast<size_t>(payload[0]));
-	const char* cmd_str = cmd == Sesame::item_code_t::lock ? "lock" : cmd == Sesame::item_code_t::unlock ? "unlock" : "click";
-	DEBUG_PRINTLN("cmd=%s(%s)", cmd_str, tstr.c_str());
+	DEBUG_PRINTLN("cmd=%s(%s)", cmd_string(cmd), tstr.c_str());
 	Sesame::response_os3_t res;
 	if (on_command_callback) {
 		res.result = on_command_callback(session.session_id, cmd, tstr);
