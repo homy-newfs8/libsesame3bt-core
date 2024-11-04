@@ -1,5 +1,5 @@
 #include "libsesame3bt/ClientCore.h"
-#include "SesameClientCoreImpl.h"
+#include "ClientCoreImpl.h"
 
 namespace libsesame3bt::core {
 

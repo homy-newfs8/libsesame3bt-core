@@ -1,4 +1,4 @@
-#include "SesameClientCoreImpl.h"
+#include "ClientCoreImpl.h"
 #include <mbedtls/base64.h>
 #include <cinttypes>
 #include "libsesame3bt/ClientCore.h"
