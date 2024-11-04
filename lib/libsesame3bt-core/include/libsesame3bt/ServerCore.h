@@ -8,9 +8,9 @@
 namespace libsesame3bt::core {
 
 class SesameServerCoreImpl;
-using registration_callback_t = std::function<void(const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
-
-using command_callback_t = std::function<Sesame::result_code_t(Sesame::item_code_t cmd, const std::string& tag)>;
+using registration_callback_t = std::function<void(uint16_t session_id, const std::array<std::byte, Sesame::SECRET_SIZE>& secret)>;
+using command_callback_t =
+    std::function<Sesame::result_code_t(uint16_t session_id, Sesame::item_code_t cmd, const std::string& tag)>;
 
 class SesameServerCore {
  public:

@@ -162,7 +162,7 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 	}
 	registered = true;
 	if (on_registration_callback) {
-		on_registration_callback(secret);
+		on_registration_callback(session.session_id, secret);
 	}
 	DEBUG_PRINTLN("registration done");
 }
@@ -215,7 +215,7 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 	DEBUG_PRINTLN("cmd=%s(%s)", cmd_str, tstr.c_str());
 	Sesame::response_os3_t res;
 	if (on_command_callback) {
-		res.result = on_command_callback(cmd, tstr);
+		res.result = on_command_callback(session.session_id, cmd, tstr);
 	} else {
 		res.result = Sesame::result_code_t::not_supported;
 	}
