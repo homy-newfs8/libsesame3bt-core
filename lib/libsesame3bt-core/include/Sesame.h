@@ -80,6 +80,8 @@ class Sesame {
 		detect_dir = 87,
 		toggle = 88,
 		click = 89,
+		open = 90,   // open sensor
+		close = 91,  // open sensor
 		add_sesame = 101,
 		pub_key_sesame = 102,
 		remove_sesame = 103,
