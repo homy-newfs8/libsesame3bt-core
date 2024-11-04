@@ -61,7 +61,7 @@ class SesameServerCoreImpl {
 	std::tuple<std::string, std::string> create_advertisement_data_os3();
 
  private:
-	static constexpr uint32_t DEFAULT_AUTH_TIMEOUT_MSEC = 5'000;
+	static constexpr uint32_t DEFAULT_AUTH_TIMEOUT_MSEC = 10'000;
 
 	SesameServerCore& core;
 	ServerBLEBackend& ble_backend;
