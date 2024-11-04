@@ -18,13 +18,14 @@ namespace util = libsesame3bt::core::util;
 
 class StubBackend : public SesameBLEBackend {
  public:
-	virtual bool write_to_tx(const uint8_t* data, size_t size) { return false; }
-	virtual void disconnect() {}
+	virtual bool write_to_tx(const uint8_t* data, size_t size) override { return false; }
+	virtual void disconnect() override {}
 };
 
 StubBackend backend;
 SesameBLETransport transport{backend};
-CryptHandler cr{std::in_place_type<OS3IVHandler>};
+CryptHandler cr_c{std::in_place_type<OS3IVHandler>};
+CryptHandler cr_p{std::in_place_type<OS3IVHandler>, true};
 
 std::string
 read_line() {
@@ -78,19 +79,20 @@ setup() {
 		Serial.println("Failed to create session key");
 		return;
 	}
-	if (!cr.set_session_key(session_key.data(), session_key.size())) {
+	if (!cr_c.set_session_key(session_key.data(), session_key.size(), {}, nonce) ||
+	    !cr_p.set_session_key(session_key.data(), session_key.size(), {}, nonce)) {
 		Serial.println("Failed to set session key");
 		return;
 	}
 	Serial.printf("session key=");
 	Serial.println(util::bin2hex(session_key.data(), session_key.size()).c_str());
-	cr.init_endec_iv(std::array<std::byte, 4>{}, nonce);
 	std::array<std::byte, 128> buffer;
 	bool prompt = true;
 	while (true) {
 		if (prompt) {
-			Serial.println("input data or role switch C)entral or P)eripheral:");
+			Serial.println("input encrypted data or role switch C)entral or P)eripheral:");
 			Serial.print(as_peripheral ? "P)" : "C)");
+			Serial.flush();
 		}
 		line = read_line();
 		if (line == "C" || line == "c") {
@@ -107,7 +109,7 @@ setup() {
 		size_t len;
 		if (util::hex2bin(line, buffer, len)) {
 			Serial.printf("decoding %u bytes\n", len);
-			auto rc = transport.decode(buffer.data(), len, cr, as_peripheral);
+			auto rc = transport.decode(buffer.data(), len, as_peripheral ? cr_p : cr_c);
 			if (rc == decode_result_t::received) {
 				Serial.printf("decoded(%u) ", transport.data_size());
 				Serial.println(util::bin2hex(transport.data(), transport.data_size()).c_str());
