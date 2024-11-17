@@ -74,8 +74,8 @@ SesameServerCore::set_registered(const std::array<std::byte, Sesame::SECRET_SIZE
 }
 
 bool
-SesameServerCore::load_key(const std::array<std::byte, 32>& privkey) {
-	return impl->load_key(privkey);
+SesameServerCore::load_privatekey(const std::array<std::byte, 32>& privkey) {
+	return impl->load_privatekey(privkey);
 }
 
 }  // namespace libsesame3bt::core

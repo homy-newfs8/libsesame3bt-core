@@ -20,8 +20,7 @@ bool Ecc::static_initialized = [] {
 
 bool
 Ecc::generate_keypair() {
-	int mbrc;
-	if ((mbrc = mbedtls_ecdh_gen_public(&ec_grp, &sk, &pk, mbedtls_ctr_drbg_random, &Random::rng_ctx)) != 0) {
+	if (int mbrc = mbedtls_ecdh_gen_public(&ec_grp, &sk, &pk, mbedtls_ctr_drbg_random, &Random::rng_ctx); mbrc != 0) {
 		DEBUG_PRINTF("%d: ecdh_gen_public failed\n", mbrc);
 		return false;
 	}

@@ -3,6 +3,7 @@
 #include <string_view>
 #include "Sesame.h"
 #include "debug.h"
+#include "hal.h"
 #include "libsesame3bt/util.h"
 
 namespace libsesame3bt::core {
@@ -358,7 +359,7 @@ SesameServerCoreImpl::create_advertisement_data_os3() {
 }
 
 bool
-SesameServerCoreImpl::load_key(const std::array<std::byte, 32>& privkey) {
+SesameServerCoreImpl::load_privatekey(const std::array<std::byte, 32>& privkey) {
 	return ecc.load_key(privkey);
 }
 
