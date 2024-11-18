@@ -24,18 +24,18 @@ class SesameServerCore {
 
 	bool generate_keypair();
 	bool load_privatekey(const std::array<std::byte, Sesame::SK_SIZE>& privkey);
-	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey);
+	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey) const;
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool on_subscribed(uint16_t session_id);
 	bool on_received(uint16_t session_id, const std::byte*, size_t);
 	void on_disconnected(uint16_t session_id);
-	bool is_registered();
+	bool is_registered() const;
 	size_t get_session_count() const;
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);
 
-	std::tuple<std::string, std::string> create_advertisement_data_os3();
+	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 
  private:
 	std::unique_ptr<SesameServerCoreImpl> impl;

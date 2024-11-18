@@ -45,7 +45,7 @@ SesameServerCore::set_on_command_callback(command_callback_t callback) {
 }
 
 std::tuple<std::string, std::string>
-SesameServerCore::create_advertisement_data_os3() {
+SesameServerCore::create_advertisement_data_os3() const {
 	return impl->create_advertisement_data_os3();
 }
 
@@ -55,7 +55,7 @@ SesameServerCore::get_session_count() const {
 }
 
 bool
-SesameServerCore::is_registered() {
+SesameServerCore::is_registered() const {
 	return impl->is_registered();
 }
 bool
@@ -64,7 +64,7 @@ SesameServerCore::generate_keypair() {
 }
 
 bool
-SesameServerCore::export_keypair(std::array<std::byte, 64>& pubkey, std::array<std::byte, 32>& privkey) {
+SesameServerCore::export_keypair(std::array<std::byte, 64>& pubkey, std::array<std::byte, 32>& privkey) const {
 	return impl->export_keypair(pubkey, privkey);
 }
 

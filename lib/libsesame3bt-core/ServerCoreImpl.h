@@ -58,7 +58,7 @@ class SesameServerCoreImpl {
 	void set_on_command_callback(command_callback_t callback) { on_command_callback = callback; }
 	void set_authentication_timeout(uint32_t timeout_msec) { auth_timeout = timeout_msec; }
 
-	std::tuple<std::string, std::string> create_advertisement_data_os3();
+	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 
  private:
 	static constexpr uint32_t DEFAULT_AUTH_TIMEOUT_MSEC = 10'000;

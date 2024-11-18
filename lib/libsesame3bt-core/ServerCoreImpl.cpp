@@ -340,7 +340,7 @@ SesameServerCoreImpl::get_session(uint16_t session_id) {
  * @return tuple of "manufacturer data" and "local name"
  */
 std::tuple<std::string, std::string>
-SesameServerCoreImpl::create_advertisement_data_os3() {
+SesameServerCoreImpl::create_advertisement_data_os3() const {
 	std::string manu;
 	manu.push_back(static_cast<char>(Sesame::COMPANY_ID & 0xff));
 	manu.push_back(static_cast<char>(Sesame::COMPANY_ID >> 8));
