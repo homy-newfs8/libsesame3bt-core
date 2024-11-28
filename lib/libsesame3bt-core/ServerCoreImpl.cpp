@@ -124,6 +124,7 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 	return rc;
 }
 
+#if LIBSESAME3BTCORE_DEBUG
 static const char*
 cmd_string(Sesame::item_code_t cmd) {
 	using item_code_t = Sesame::item_code_t;
@@ -140,6 +141,7 @@ cmd_string(Sesame::item_code_t cmd) {
 			return "UNKNOWN";
 	}
 }
+#endif
 
 void
 SesameServerCoreImpl::on_disconnected(uint16_t session_id) {
@@ -169,7 +171,6 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 		return false;
 	}
 	auto* cmd = reinterpret_cast<const Sesame::os3_cmd_registration_t*>(payload);
-	DEBUG_PRINTLN("registration time=%u", cmd->timestamp);
 	if (!ecc.derive_secret(cmd->public_key, secret)) {
 		return false;
 	}
@@ -180,9 +181,9 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 	if (!ecc.export_pk(resp.public_key)) {
 		return false;
 	}
-	DEBUG_PRINTLN("sending registration response (%u)", sizeof(resp));
 	if (!session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp), sizeof(resp),
 	                                   false, session.crypt)) {
+		DEBUG_PRINTLN("Failed to send registration notification, registration aborted");
 		return false;
 	}
 	registered = true;
@@ -190,7 +191,6 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 	if (on_registration_callback) {
 		on_registration_callback(session.session_id, secret);
 	}
-	DEBUG_PRINTLN("registration done");
 
 	return true;
 }
@@ -294,10 +294,8 @@ SesameServerCoreImpl::prepare_session_key(ServerSession& session) {
 		return false;
 	}
 	if (!session.crypt.set_session_key(session_key.data(), session_key.size(), {}, session.nonce)) {
-		DEBUG_PRINTLN("Failed to init session");
 		return false;
 	}
-	DEBUG_PRINTLN("session key prepared");
 	return true;
 }
 
