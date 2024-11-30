@@ -41,9 +41,6 @@ class SesameServerCoreImpl {
 	SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions);
 	bool begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
 	void update();
-	bool generate_keypair();
-	bool load_privatekey(const std::array<std::byte, 32>& privkey);
-	bool export_keypair(std::array<std::byte, 64>& pubkey, std::array<std::byte, 32>& privkey);
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool is_registered() const { return registered; }
 	size_t get_session_count() const;

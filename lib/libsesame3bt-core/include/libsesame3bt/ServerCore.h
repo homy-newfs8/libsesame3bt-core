@@ -23,9 +23,6 @@ class SesameServerCore {
 	bool begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
 	void update();
 
-	bool generate_keypair();
-	bool load_privatekey(const std::array<std::byte, Sesame::SK_SIZE>& privkey);
-	bool export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, Sesame::SK_SIZE>& privkey) const;
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool on_subscribed(uint16_t session_id);
 	bool on_received(uint16_t session_id, const std::byte*, size_t);

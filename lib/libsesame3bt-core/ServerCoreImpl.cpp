@@ -40,11 +40,6 @@ SesameServerCoreImpl::begin(Sesame::model_t model, const uint8_t (&uuid)[16]) {
 	this->model = model;
 	std::copy(std::cbegin(uuid), std::cend(uuid), std::begin(this->uuid));
 
-	return true;
-}
-
-bool
-SesameServerCoreImpl::generate_keypair() {
 	return ecc.generate_keypair();
 }
 
@@ -270,15 +265,6 @@ ServerSession::set_state(session_state_t state) {
 }
 
 bool
-SesameServerCoreImpl::export_keypair(std::array<std::byte, Sesame::PK_SIZE>& pubkey, std::array<std::byte, 32>& privkey) {
-	bool rc = ecc.export_pk(pubkey);
-	if (rc) {
-		rc = ecc.convert_sk_to_binary(ecc.sk, privkey);
-	}
-	return rc;
-}
-
-bool
 SesameServerCoreImpl::set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& new_secret) {
 	std::copy(std::cbegin(new_secret), std::cend(new_secret), std::begin(secret));
 	registered = true;
@@ -354,11 +340,6 @@ SesameServerCoreImpl::create_advertisement_data_os3() const {
 	}
 	std::string name{reinterpret_cast<const char*>(b64), 22};
 	return std::make_tuple(manu, name);
-}
-
-bool
-SesameServerCoreImpl::load_privatekey(const std::array<std::byte, 32>& privkey) {
-	return ecc.load_key(privkey);
 }
 
 void

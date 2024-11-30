@@ -58,24 +58,10 @@ bool
 SesameServerCore::is_registered() const {
 	return impl->is_registered();
 }
-bool
-SesameServerCore::generate_keypair() {
-	return impl->generate_keypair();
-}
-
-bool
-SesameServerCore::export_keypair(std::array<std::byte, 64>& pubkey, std::array<std::byte, 32>& privkey) const {
-	return impl->export_keypair(pubkey, privkey);
-}
 
 bool
 SesameServerCore::set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) {
 	return impl->set_registered(secret);
-}
-
-bool
-SesameServerCore::load_privatekey(const std::array<std::byte, 32>& privkey) {
-	return impl->load_privatekey(privkey);
 }
 
 bool
