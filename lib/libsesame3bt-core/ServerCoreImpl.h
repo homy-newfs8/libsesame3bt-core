@@ -31,9 +31,7 @@ class ServerSession : SesameBLEBackend {
 	ServerBLEBackend& backend;
 	const uint16_t session_id;
 	SesameBLETransport transport;
-	virtual bool write_to_tx(const uint8_t* data, size_t size) override {
-		return backend.write_to_peripheral(session_id, data, size);
-	};
+	virtual bool write_to_tx(const uint8_t* data, size_t size) override { return backend.write_to_central(session_id, data, size); };
 	virtual void disconnect() override { backend.disconnect(session_id); }
 	void set_state(session_state_t state);
 };

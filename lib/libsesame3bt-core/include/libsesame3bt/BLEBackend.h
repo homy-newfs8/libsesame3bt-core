@@ -28,7 +28,7 @@ class SesameBLEBackend {
 
 class ServerBLEBackend {
  public:
-	virtual bool write_to_peripheral(uint16_t session_id, const uint8_t* data, size_t size) = 0;
+	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) = 0;
 	virtual void disconnect(uint16_t session_id) = 0;
 };
 
