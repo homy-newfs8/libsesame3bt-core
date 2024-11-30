@@ -382,4 +382,31 @@ SesameServerCoreImpl::update() {
 	}
 }
 
+bool
+SesameServerCoreImpl::send_notify(std::optional<uint16_t> session_id,
+                                  Sesame::op_code_t op_code,
+                                  Sesame::item_code_t item_code,
+                                  const std::byte* data,
+                                  size_t size) {
+	if (session_id) {
+		auto* session = get_session(*session_id);
+		if (!session) {
+			DEBUG_PRINTLN("%u: Sessinon not exists", *session_id);
+			return false;
+		}
+		return session->transport.send_notify(op_code, item_code, data, size, true, session->crypt);
+	} else {
+		bool rc = true;
+		for (auto& p : vsessions) {
+			if (p.first) {
+				if (!p.second->transport.send_notify(op_code, item_code, data, size, true, p.second->crypt)) {
+					DEBUG_PRINTLN("%u: Failed to send notify", *p.first);
+					rc = false;
+				}
+			}
+		}
+		return rc;
+	}
+}
+
 }  // namespace libsesame3bt::core

@@ -47,6 +47,11 @@ class SesameServerCoreImpl {
 	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool is_registered() const { return registered; }
 	size_t get_session_count() const;
+	bool send_notify(std::optional<uint16_t> session_id,
+	                 Sesame::op_code_t op_code,
+	                 Sesame::item_code_t item_code,
+	                 const std::byte* data,
+	                 size_t size);
 
 	bool on_subscribed(uint16_t session_id);
 	bool on_received(uint16_t session_id, const std::byte* data, size_t size);

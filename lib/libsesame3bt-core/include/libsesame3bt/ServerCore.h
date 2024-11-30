@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include "BLEBackend.h"
 #include "Sesame.h"
@@ -31,6 +32,11 @@ class SesameServerCore {
 	void on_disconnected(uint16_t session_id);
 	bool is_registered() const;
 	size_t get_session_count() const;
+	bool send_notify(std::optional<uint16_t> session_id,
+	                 Sesame::op_code_t op_code,
+	                 Sesame::item_code_t item_code,
+	                 const std::byte* data,
+	                 size_t size);
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);

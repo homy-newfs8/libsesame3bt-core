@@ -78,4 +78,13 @@ SesameServerCore::load_privatekey(const std::array<std::byte, 32>& privkey) {
 	return impl->load_privatekey(privkey);
 }
 
+bool
+libsesame3bt::core::SesameServerCore::send_notify(std::optional<uint16_t> session_id,
+                                                  Sesame::op_code_t op_code,
+                                                  Sesame::item_code_t item_code,
+                                                  const std::byte* data,
+                                                  size_t size) {
+	return impl->send_notify(session_id, op_code, item_code, data, size);
+}
+
 }  // namespace libsesame3bt::core
