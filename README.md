@@ -89,6 +89,11 @@ void do_unlock_lock() {
 # Integrate to your Home Automation system without code
 * ESPHome External Component [esphome-sesame3](https://github.com/homy-newfs8/esphome-sesame3)
 
+# Server feature
+Starting with version 0.8.0, the Sesame Server feature has been added, allowing the device to pretend to be a SESAME 5 device and listen for and handle push button events from CANDY HOUSE Remote/nano and open/close events from the Open Sensor.
+
+See [libsesame3bt-server](https://github.com/homy-newfs8/libsesame3bt-server) library for usage.
+
 # License
 MIT AND Apache-2.0
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.8.0] 2024-12-29
+
+- Add Sesame Server feature
+
 ## [v0.7.0] 2024-09-14
 
 - Support SESAME Bot 2
