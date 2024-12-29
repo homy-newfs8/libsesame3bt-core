@@ -80,10 +80,10 @@ class Sesame {
 		detect_dir = 87,
 		toggle = 88,
 		click = 89,
-		open = 90,   // open sensor
-		close = 91,  // open sensor
+		door_open = 90,    // open sensor
+		door_closed = 91,  // open sensor
 		add_sesame = 101,
-		pub_key_sesame = 102,
+		pub_ssm_key = 102,
 		remove_sesame = 103,
 	};
 	enum class result_code_t : uint8_t {
@@ -189,11 +189,13 @@ class Sesame {
 		int16_t battery;
 		int16_t target;
 		int16_t position;
-		uint8_t unknown1 : 1;
+		bool is_clutch_failed : 1;
 		bool in_lock : 1;
-		uint8_t unknown2 : 2;
+		bool is_unlock_range : 1;
+		bool is_critical : 1;
 		bool is_stop : 1;
 		bool is_battery_critical : 1;
+		bool is_clockwise : 1;
 	};
 	struct __attribute__((packed)) publish_initial_t {
 		std::byte token[TOKEN_SIZE];

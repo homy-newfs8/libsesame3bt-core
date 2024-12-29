@@ -107,8 +107,8 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 			break;
 		case item_code_t::lock:
 		case item_code_t::unlock:
-		case item_code_t::open:
-		case item_code_t::close:
+		case item_code_t::door_open:
+		case item_code_t::door_closed:
 			rc = handle_cmd_with_tag(*session, code, data + 1, size - 1);
 			break;
 		default:
@@ -128,9 +128,9 @@ cmd_string(Sesame::item_code_t cmd) {
 			return "lock";
 		case item_code_t::unlock:
 			return "unlock";
-		case item_code_t::open:
+		case item_code_t::door_open:
 			return "open";
-		case item_code_t::close:
+		case item_code_t::door_closed:
 			return "close";
 		default:
 			return "UNKNOWN";

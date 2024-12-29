@@ -127,7 +127,7 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 				case Sesame::item_code_t::mech_status:
 					handler->handle_publish_mecha_status(body, recv_size - sizeof(Sesame::message_header_t));
 					break;
-				case Sesame::item_code_t::pub_key_sesame:
+				case Sesame::item_code_t::pub_ssm_key:
 					handle_publish_pub_key_sesame(body, recv_size - sizeof(Sesame::message_header_t));
 					break;
 				default:
