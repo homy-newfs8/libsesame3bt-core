@@ -105,6 +105,18 @@ SesameClientCore::click(const std::optional<uint8_t> script_no) {
 }
 
 /**
+ * @brief Click SESAME (for SESAME Bot).
+ *
+ * @param script_no script number. For Bot, specify zero(no meaning). For Bot 2 specify script number to run (0 to 9), if no value run currently selected script.
+ * @return true
+ * @return false
+ */
+bool
+SesameClientCore::click(std::string_view tag) {
+	return impl->click(tag);
+}
+
+/**
  * @brief Request history tag.
  *
  * @return true

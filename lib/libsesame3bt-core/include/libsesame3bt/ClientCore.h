@@ -173,7 +173,9 @@ class Status {
    *
    */
 struct History {
+	Sesame::result_code_t result;
 	Sesame::history_type_t type;
+	int32_t record_id;
 	time_t time;
 	uint8_t tag_len;
 	char tag[Sesame::MAX_HISTORY_TAG_SIZE + 1];
@@ -210,6 +212,7 @@ class SesameClientCore {
 	bool unlock(std::string_view tag);
 	bool lock(std::string_view tag);
 	bool click(const std::optional<uint8_t> script_no = std::nullopt);
+	bool click(std::string_view tag);
 	bool request_history();
 	bool is_session_active() const;
 	void set_status_callback(status_callback_t callback);

@@ -116,6 +116,7 @@ class Sesame {
 		wm2_unlock,
 		web_lock,
 		web_unlock,
+		ble_click,           // observed value
 		drive_clicked = 21,  // observed value
 	};
 

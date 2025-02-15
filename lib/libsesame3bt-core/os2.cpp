@@ -129,26 +129,19 @@ void
 OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 	History history{};
 	if (in_len < 2) {
-		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
-		client->fire_history_callback(history);
+		DEBUG_PRINTLN("%u: Unexpected size of history response, ignored", in_len);
 		return;
 	}
-	if (static_cast<Sesame::result_code_t>(in[1]) != Sesame::result_code_t::success) {
-		DEBUG_PRINTF("%u: Failure response to request history\n", static_cast<uint8_t>(in[1]));
-		client->fire_history_callback(history);
-		return;
-	}
-	if (in_len < sizeof(Sesame::response_history_t)) {
-		DEBUG_PRINTF("%u: Unexpected size of history, ignored\n", in_len);
+	history.result = static_cast<Sesame::result_code_t>(in[1]);
+	if (history.result != Sesame::result_code_t::success || in_len < sizeof(Sesame::response_history_t)) {
+		DEBUG_PRINTLN("%u: Empty history response", history.result);
 		client->fire_history_callback(history);
 		return;
 	}
 	const auto* hist = reinterpret_cast<const Sesame::response_history_t*>(in);
 	history.time = static_cast<time_t>(hist->timestamp / 1000);
+	history.record_id = hist->record_id;
 	auto histtype = hist->type;
-	if (histtype > Sesame::history_type_t::web_unlock && histtype != Sesame::history_type_t::drive_clicked) {
-		histtype = Sesame::history_type_t::none;
-	}
 	constexpr size_t SKIP_SIZE = 18;
 	if (in_len > sizeof(Sesame::response_history_t) + SKIP_SIZE) {
 		const auto* tag_data = reinterpret_cast<const char*>(in + sizeof(Sesame::response_history_t) + SKIP_SIZE);
