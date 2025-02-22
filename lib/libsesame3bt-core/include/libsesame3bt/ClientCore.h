@@ -103,6 +103,7 @@ class Status {
 	      _batt_pct(voltage_to_pct(voltage * vol_scale)),
 	      _target(status.target),
 	      _position(status.position),
+	      _ret_code(status.retcode),
 	      _in_lock(status.in_lock),
 	      _in_unlock(status.in_unlock),
 	      _battery_critical(status.is_battery_critical),
@@ -136,6 +137,7 @@ class Status {
 	float battery_pct() const { return _batt_pct; }
 	bool stopped() const { return _stopped; }
 	Sesame::motor_status_t motor_status() const { return _motor_status; }
+	uint8_t ret_code() const { return _ret_code; }
 
 	bool operator==(const Status& that) const {
 		if (&that == this) {
@@ -153,6 +155,7 @@ class Status {
 	float _batt_pct = 0;
 	int16_t _target = 0;
 	int16_t _position = 0;
+	int8_t _ret_code = 0;
 	bool _in_lock = false;
 	bool _in_unlock = false;
 	bool _battery_critical = false;
