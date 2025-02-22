@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.9.0] 2025-02-22
+
+- For SESAME bot (1) click(std::string_view) reverted.
+- Add History member: result, record_id
+- Add Status member: ret_code (valid for OS2 devices).
+- Do not call history callback on corrupted responses.
+
 ## [v0.8.0] 2024-12-29
 
 - Add Sesame Server feature
