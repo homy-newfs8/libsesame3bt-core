@@ -116,7 +116,7 @@ class Sesame {
 		wm2_unlock,
 		web_lock,
 		web_unlock,
-		ble_click,           // observed value
+		ble_click,           // BT API→Bot, セサミアプリ WiFi→(Web)→WM2=>Botの両方
 		drive_clicked = 21,  // observed value
 	};
 
