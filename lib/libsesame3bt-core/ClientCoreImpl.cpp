@@ -173,7 +173,7 @@ SesameClientCoreImpl::handle_publish_initial() {
 
 bool
 SesameClientCoreImpl::request_history() {
-	std::byte flag{0};
+	std::byte flag{1};
 	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::history, &flag, sizeof(flag), true);
 }
 
