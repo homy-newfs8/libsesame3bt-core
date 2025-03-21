@@ -134,7 +134,7 @@ OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 	}
 	history.result = static_cast<Sesame::result_code_t>(in[1]);
 	if (history.result != Sesame::result_code_t::success || in_len < sizeof(Sesame::response_history_t)) {
-		DEBUG_PRINTLN("%u: Empty history response", history.result);
+		DEBUG_PRINTLN("%u: Empty history response", static_cast<uint8_t>(history.result));
 		client->fire_history_callback(history);
 		return;
 	}
