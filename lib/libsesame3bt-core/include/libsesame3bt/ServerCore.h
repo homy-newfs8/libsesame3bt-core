@@ -28,6 +28,7 @@ class SesameServerCore {
 	bool on_received(uint16_t session_id, const std::byte*, size_t);
 	void on_disconnected(uint16_t session_id);
 	bool is_registered() const;
+	bool has_session(uint16_t session_id) const;
 	size_t get_session_count() const;
 	bool send_notify(std::optional<uint16_t> session_id,
 	                 Sesame::op_code_t op_code,

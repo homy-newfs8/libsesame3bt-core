@@ -53,6 +53,7 @@ class SesameServerCoreImpl {
 	bool on_subscribed(uint16_t session_id);
 	bool on_received(uint16_t session_id, const std::byte* data, size_t size);
 	void on_disconnected(uint16_t session_id);
+	bool has_session(uint16_t session_id) const;
 
 	void set_on_registration_callback(registration_callback_t callback) { on_registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { on_command_callback = callback; }

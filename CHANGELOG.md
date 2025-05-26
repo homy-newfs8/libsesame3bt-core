@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.10.0] 2025-XX-XX
+- Add `has_session()`.
+
 ## [v0.9.0] 2025-02-22
 
 - For SESAME bot (1) click(std::string_view) reverted.

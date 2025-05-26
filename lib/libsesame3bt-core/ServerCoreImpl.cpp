@@ -390,4 +390,10 @@ SesameServerCoreImpl::send_notify(std::optional<uint16_t> session_id,
 	}
 }
 
+bool
+SesameServerCoreImpl::has_session(uint16_t session_id) const {
+	return std::find_if(vsessions.begin(), vsessions.end(), [session_id](auto& pair) { return pair.first == session_id; }) !=
+	       vsessions.end();
+}
+
 }  // namespace libsesame3bt::core

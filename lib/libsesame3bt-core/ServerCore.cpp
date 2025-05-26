@@ -73,4 +73,9 @@ libsesame3bt::core::SesameServerCore::send_notify(std::optional<uint16_t> sessio
 	return impl->send_notify(session_id, op_code, item_code, data, size);
 }
 
+bool
+SesameServerCore::has_session(uint16_t session_id) const {
+	return impl->has_session(session_id);
+}
+
 }  // namespace libsesame3bt::core
