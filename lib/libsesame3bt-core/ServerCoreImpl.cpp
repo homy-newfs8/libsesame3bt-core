@@ -239,11 +239,20 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 		DEBUG_PRINTLN("Too short command, ignored");
 		return false;
 	}
-	auto tstr = std::string(reinterpret_cast<const char*>(payload + 1), static_cast<size_t>(payload[0]));
+	std::optional<trigger_type_t> trigger_type;
+	std::string tstr;
+	if (std::to_integer<uint8_t>(payload[0]) > 0) {
+		tstr = std::string(reinterpret_cast<const char*>(payload + 1), static_cast<size_t>(payload[0]));
+	} else if (size == 18) {
+		trigger_type = static_cast<trigger_type_t>(payload[1]);
+		tstr = util::bin2hex(payload + 2, 16);
+	} else {
+		tstr = {};
+	}
 	DEBUG_PRINTLN("cmd=%s(%s)", cmd_string(cmd), tstr.c_str());
 	Sesame::response_os3_t res;
 	if (on_command_callback) {
-		res.result = on_command_callback(session.session_id, cmd, tstr);
+		res.result = on_command_callback(session.session_id, cmd, tstr, trigger_type);
 	} else {
 		res.result = Sesame::result_code_t::not_supported;
 	}

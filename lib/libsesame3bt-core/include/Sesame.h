@@ -5,6 +5,21 @@
 
 namespace libsesame3bt {
 
+/// @warning Not well defined values, may be changed in future
+enum class trigger_type_t : uint8_t {
+	ic_card = 0,        // touch, face
+	face_finger = 1,    // face
+	face = 3,           // face
+	face_vein = 4,      // face
+	touch_finger = 6,   // touch success, unknown fingerprint
+	open_sensor = 7,    // open sensor
+	face_close = 9,     // face close switch, unknown fingerprint
+	remote = 10,        // remote
+	remote_nano = 11,   // remote nano
+	android_ble = 14,   // android app (from Android SDK)
+	android_wifi = 16,  // from Android SDK
+};
+
 class Sesame {
  public:
 	static constexpr size_t TOKEN_SIZE = 4;
@@ -36,9 +51,15 @@ class Sesame {
 		sesame_touch_pro = 9,
 		sesame_touch = 10,
 		ble_connector = 11,
+		hub3 = 13,
 		remote = 14,
 		remote_nano = 15,
+		sesame_5_us = 16,
 		sesame_bot_2 = 17,
+		sesame_face_pro = 18,
+		sesame_face = 19,
+		sesame_6 = 20,
+		sesame_6_pro = 21,
 	};
 	enum class motor_status_t : uint8_t { idle = 0, locking, holding, unlocking };
 	enum class op_code_t : uint8_t {
@@ -124,7 +145,7 @@ class Sesame {
 
 	static os_ver_t get_os_ver(model_t model) {
 		int8_t v = static_cast<int8_t>(model);
-		if (v < 0 || v > static_cast<int8_t>(model_t::sesame_bot_2)) {
+		if (v < 0 || v > static_cast<int8_t>(model_t::sesame_face)) {
 			return os_ver_t::unknown;
 		} else if (v >= static_cast<int8_t>(model_t::sesame_3) && v <= static_cast<int8_t>(model_t::sesame_4)) {
 			return os_ver_t::os2;

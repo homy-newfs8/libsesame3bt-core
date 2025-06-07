@@ -1,8 +1,33 @@
 #include "libsesame3bt/ServerCore.h"
 #include "ServerCoreImpl.h"
+#include "crypt.h"
 #include "debug.h"
 
 namespace libsesame3bt::core {
+
+namespace {
+
+constexpr std::array<std::byte, 5> CANDY = {std::byte{'c'}, std::byte{'a'}, std::byte{'n'}, std::byte{'d'}, std::byte{'y'}};
+
+}
+
+/// @brief Make BLE address from 128-bit UUID (SESAME 5 or later)
+/// @param uuid (big-endian) 128-bit UUID
+/// @return BLE address (6 bytes, big-endian, with the two most significant bits set to 1)
+/// @note Return all-zeros on failure.
+std::array<std::byte, 6>
+SesameServerCore::uuid_to_ble_address(const std::byte (&uuid)[16]) {
+	CmacAes128 cmac;
+	cmac.set_key(uuid);
+	cmac.update(CANDY);
+	std::array<std::byte, 16> out;
+	auto rc = cmac.finish(out);
+	if (!rc) {
+		DEBUG_PRINTF("Failed to create BLE address from UUID\n");
+		return {};
+	}
+	return std::array<std::byte, 6>{out[5] | std::byte{0xC0}, out[4], out[3], out[2], out[1], out[0]};
+}
 
 SesameServerCore::SesameServerCore(ServerBLEBackend& backend, int max_sessions)
     : impl(std::make_unique<SesameServerCoreImpl>(backend, *this, max_sessions)) {}

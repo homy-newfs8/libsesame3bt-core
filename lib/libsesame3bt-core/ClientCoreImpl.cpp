@@ -55,6 +55,8 @@ SesameClientCoreImpl::begin(model_t model) {
 		case model_t::remote:
 		case model_t::remote_nano:
 		case model_t::sesame_bot_2:
+		case model_t::sesame_face_pro:
+		case model_t::sesame_face:
 			crypt.emplace(std::in_place_type<OS3IVHandler>);
 			handler.emplace(std::in_place_type<OS3Handler>, this, transport, *crypt);
 			break;
@@ -131,7 +133,8 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					handle_publish_pub_key_sesame(body, recv_size - sizeof(Sesame::message_header_t));
 					break;
 				default:
-					DEBUG_PRINTF("%u: Unsupported item on publish\n", static_cast<uint8_t>(msg->item_code));
+					DEBUG_PRINTLN("%u: Unsupported item on publish: %s", static_cast<uint8_t>(msg->item_code),
+					              util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
 					break;
 			}
 			break;
@@ -150,12 +153,13 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 					}
 					break;
 				default:
-					DEBUG_PRINTLN("%s: Unsupported item on response", util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
+					DEBUG_PRINTLN("%u: Unsupported item on response: %s", static_cast<uint8_t>(msg->item_code),
+					              util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
 					break;
 			}
 			break;
 		default:
-			DEBUG_PRINTF("%u: Unexpected op code\n", static_cast<uint8_t>(msg->op_code));
+			DEBUG_PRINTLN("%u: Unexpected op code", static_cast<uint8_t>(msg->op_code));
 			break;
 	}
 }
@@ -291,6 +295,8 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::remote:
 		case model_t::remote_nano:
 		case model_t::sesame_bot_2:
+		case model_t::sesame_face_pro:  // may be
+		case model_t::sesame_face:
 			return false;
 		default:
 			return true;
