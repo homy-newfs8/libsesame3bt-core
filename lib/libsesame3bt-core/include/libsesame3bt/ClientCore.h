@@ -178,6 +178,7 @@ class Status {
 struct History {
 	Sesame::result_code_t result;
 	Sesame::history_type_t type;
+	std::optional<trigger_type_t> trigger_type;
 	int32_t record_id;
 	time_t time;
 	uint8_t tag_len;

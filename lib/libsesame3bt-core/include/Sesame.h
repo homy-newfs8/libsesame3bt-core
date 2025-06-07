@@ -34,7 +34,9 @@ class Sesame {
 
 	static constexpr size_t MAX_CMD_TAG_SIZE_OS2 = 21;
 	static constexpr size_t MAX_CMD_TAG_SIZE_OS3 = 29;
-	static constexpr size_t MAX_HISTORY_TAG_SIZE = std::max(MAX_CMD_TAG_SIZE_OS2, MAX_CMD_TAG_SIZE_OS3);
+	static constexpr size_t MAX_CMD_TAG_SIZE_OS3_V2 = 32;  // Hex-encoded UUID
+	static constexpr size_t MAX_HISTORY_TAG_SIZE =
+	    std::max(std::max(MAX_CMD_TAG_SIZE_OS2, MAX_CMD_TAG_SIZE_OS3), MAX_CMD_TAG_SIZE_OS3_V2);
 
 	enum class model_t : int8_t {
 		unknown = -1,

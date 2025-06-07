@@ -13,6 +13,13 @@ Support for new Sesame history tag format (May 2025).
 The human-readable tag string value appears to be managed by the SESAME Server (SESAME Biz).
 	 - Touch/Remote with older firmware will send the literal tag string as before. In that case, `trigger_value` will not have a value.
 
+## Important changes
+- `struct History` has been modified to handle the new spec history in the history callback.
+	- Added `trigger_type` member.
+	- Maximum tag string length increased to 32 (Hexstring of UUID).
+	- If `trigger_type` has a value, the `tag` string will be a UUID (128-bit) hex string.
+- The tag parameter handling in `lock()`/`unlock()`/`click()` is unchanged. Specified string is passed to SESAME as is.
+
 ## [v0.10.0] 2025-05-31
 - Add `has_session()` to SesameServerCore.
 
