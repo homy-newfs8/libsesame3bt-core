@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.11.0] 2025-XX-XX
+## [v0.11.0] 2025-06-08
 ### Additions
 - Add `uuid_to_ble_address()`, SESAME specific address conversion.
 - Add `model_t` symbols (face, etc).
