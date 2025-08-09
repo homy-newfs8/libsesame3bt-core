@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.12.0] 2025-08-09
+- Reorganize platformio.ini to build for both Arduino 3.x and 2.x.
+
 ## [v0.11.0] 2025-06-08
 ### Additions
 - Add `uuid_to_ble_address()`, SESAME specific address conversion.

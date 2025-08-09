@@ -29,14 +29,10 @@ With [libsesame3bt](https://github.com/homy-newfs8/libsesame3bt), you can contro
 platformmio.ini
 ```ini
 [env]
-platform = espressif32
+platform = https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip
 framework = arduino
-lib_deps =
-	https://github.com/homy-newfs8/libsesame3bt#0.25.0
-build_flags =
-	-std=gnu++17
-build_unflags =
-	-std=gnu++11
+lib_deps = https://github.com/homy-newfs8/libsesame3bt#0.26.0
+build_flags = -DCONFIG_MBEDTLS_CMAC_C -DUSE_FRAMEWORK_MBEDTLS_CMAC
 ````
 
 # Example
@@ -74,13 +70,13 @@ void do_unlock_lock() {
 	// or specify bluetooth address and model type directory
 	client.begin(BLEAddress{"***your device address***", BLE_ADDR_RANDOM}, Sesame::model_t::sesame_5);
 
-	client.set_keys(nullptr, SESAME_SECRET);
+	client.set_keys("", SESAME_SECRET);
 	client.connect();
 	// Wait for connection and authentication done
 	// See example/by_scan/by_scan.cpp for details
-	client.unlock(u8"**TAG**");
+	client.unlock("**TAG**");
 	delay(3000);
-	client.lock(u8"***TAG***");
+	client.lock("***TAG***");
 }
 ```
 # Sample App
