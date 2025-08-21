@@ -126,6 +126,7 @@ class Status {
 	      _in_unlock(!status.in_lock),
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(status.is_stop),
+	      _is_critical(status.is_critical),
 	      _motor_status(Sesame::motor_status_t::idle) {}
 	float voltage() const { return _voltage; }
 	[[deprecated("use battery_critical() instead")]] bool voltage_critical() const { return _battery_critical; }
@@ -136,6 +137,7 @@ class Status {
 	int16_t position() const { return _position; }
 	float battery_pct() const { return _batt_pct; }
 	bool stopped() const { return _stopped; }
+	bool is_critical() const { return _is_critical; }
 	Sesame::motor_status_t motor_status() const { return _motor_status; }
 	uint8_t ret_code() const { return _ret_code; }
 
@@ -160,6 +162,7 @@ class Status {
 	bool _in_unlock = false;
 	bool _battery_critical = false;
 	bool _stopped = false;
+	bool _is_critical = false;
 	Sesame::motor_status_t _motor_status = Sesame::motor_status_t::idle;
 	struct BatteryTable {
 		float voltage;
