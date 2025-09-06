@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.13.0] 2025-09-06
+- Add Status::is_critical() (Reflect SESAME 5 is_critical flag)
+
 ## [v0.12.0] 2025-08-09
 - Reorganize platformio.ini to build for both Arduino 3.x and 2.x.
 
