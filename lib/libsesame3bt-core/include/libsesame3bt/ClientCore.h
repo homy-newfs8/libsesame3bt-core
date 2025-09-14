@@ -91,13 +91,6 @@ class BotSetting {
 class Status {
  public:
 	Status() {}
-	Status(const Sesame::mecha_bot_2_status_t& status, int8_t vol_scale)
-	    : _voltage(status.battery * 2.0f / 1000),
-	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
-	      _in_lock(status.is_idle),
-	      _in_unlock(!status.is_idle),
-	      _stopped(status.is_idle),
-	      _motor_status(status.is_idle ? Sesame::motor_status_t::idle : Sesame::motor_status_t::locking) {}
 	Status(const Sesame::mecha_status_t::mecha_lock_status_t& status, float voltage, int8_t vol_scale)
 	    : _voltage(voltage),
 	      _batt_pct(voltage_to_pct(voltage * vol_scale)),
@@ -108,7 +101,7 @@ class Status {
 	      _in_unlock(status.in_unlock),
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(false),
-	      _motor_status(Sesame::motor_status_t::idle) {}
+	      _motor_status{} {}
 	Status(const Sesame::mecha_status_t::mecha_bot_status_t& status, float voltage)
 	    : _voltage(voltage),
 	      _batt_pct(voltage_to_pct(voltage * 2)),
@@ -117,8 +110,22 @@ class Status {
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(status.motor_status == Sesame::motor_status_t::idle || status.motor_status == Sesame::motor_status_t::holding),
 	      _motor_status(status.motor_status) {}
+	Status(const Sesame::mecha_bot_2_status_t& status, int8_t vol_scale)
+	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
+	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	      _in_lock(status.in_lock),
+	      _in_unlock(!status.in_lock),
+	      _stopped(status.is_idle),
+	      _motor_status{} {};
+	Status(const Sesame::mecha_bike_2_status_t& status, int8_t vol_scale)
+	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
+	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	      _in_lock(status.in_lock),
+	      _in_unlock(!status.in_lock),
+	      _stopped(status.is_stop),
+	      _motor_status{} {}
 	Status(const Sesame::mecha_status_5_t& status, int8_t vol_scale)
-	    : _voltage(status.battery * 2.0f / 1000),
+	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
 	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
 	      _target(status.target),
 	      _position(status.position),
@@ -127,7 +134,7 @@ class Status {
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(status.is_stop),
 	      _is_critical(status.is_critical),
-	      _motor_status(Sesame::motor_status_t::idle) {}
+	      _motor_status{} {}
 	float voltage() const { return _voltage; }
 	[[deprecated("use battery_critical() instead")]] bool voltage_critical() const { return _battery_critical; }
 	bool battery_critical() const { return _battery_critical; }
@@ -136,8 +143,10 @@ class Status {
 	int16_t target() const { return _target; }
 	int16_t position() const { return _position; }
 	float battery_pct() const { return _batt_pct; }
+	/// @note stopped is not meaningful for SESAME 3 / SESAME 4
 	bool stopped() const { return _stopped; }
 	bool is_critical() const { return _is_critical; }
+	/// @note motor_status is meaningful only for Bot (not Bot 2)
 	Sesame::motor_status_t motor_status() const { return _motor_status; }
 	uint8_t ret_code() const { return _ret_code; }
 

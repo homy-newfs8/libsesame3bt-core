@@ -46,8 +46,18 @@ class OS3Handler {
 	bool setting_received = false;
 	bool status_received = false;
 
-	static float battery_voltage(int16_t battery) { return battery * 2.0f / 1000; };
-	static constexpr int8_t voltage_scale(Sesame::model_t model) { return model == Sesame::model_t::sesame_bike_2 ? 2 : 1; };
+	static constexpr int8_t voltage_scale(Sesame::model_t model) {
+		switch (model) {
+			case Sesame::model_t::open_sensor_1:
+			case Sesame::model_t::remote:
+			case Sesame::model_t::remote_nano:
+			case Sesame::model_t::sesame_bot_2:
+			case Sesame::model_t::sesame_bike_2:
+				return 2;
+			default:
+				return 1;
+		}
+	}
 };
 
 }  // namespace libsesame3bt::core

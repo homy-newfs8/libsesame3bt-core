@@ -295,6 +295,7 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::remote:
 		case model_t::remote_nano:
 		case model_t::sesame_bot_2:
+		case model_t::sesame_bike_2:
 		case model_t::sesame_face_pro:  // may be
 		case model_t::sesame_face:
 			return false;
