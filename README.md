@@ -1,5 +1,5 @@
 # libsesame3bt-core
-Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME Bot 2 / SESAME 4 / SESAME 3 / SESAME bot / SESAME 3 bike (SESAME Cycle)
+Bluetooth LE access library for CANDY HOUSE SESAME 5 / SESAME 5 PRO / SESAME Bot 2 / SESAME bike 2 / SESAME 4 / SESAME 3 / SESAME bot / SESAME 3 bike (SESAME Cycle)
 
 # Usage
 This library contains the message processing part. BLE connections must be handled outside of this library.
@@ -31,7 +31,7 @@ platformmio.ini
 [env]
 platform = https://github.com/pioarduino/platform-espressif32/releases/download/stable/platform-espressif32.zip
 framework = arduino
-lib_deps = https://github.com/homy-newfs8/libsesame3bt#0.26.0
+lib_deps = https://github.com/homy-newfs8/libsesame3bt#0.28.0
 build_flags = -DCONFIG_MBEDTLS_CMAC_C -DUSE_FRAMEWORK_MBEDTLS_CMAC
 ````
 

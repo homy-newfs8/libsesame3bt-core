@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.14.0] 2025-09-15
+- Fix Remote, Bot2 battery voltage (was doubled)
+- Support Bike 2.
+- Support 2025 Aug firmware of Bot 2 / Bike 2 (lock status is supported)
+- Status::motor_status() is only for SESAME bot (not Bot 2 and other devices)
+- Status::stopped() is not meaningful for SESAME 3 / SESAME 4
+
 ## [v0.13.0] 2025-09-06
 - Add Status::is_critical() (Reflect SESAME 5 is_critical flag)
 
