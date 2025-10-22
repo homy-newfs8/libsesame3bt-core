@@ -69,6 +69,16 @@ SesameServerCore::set_on_command_callback(command_callback_t callback) {
 	impl->set_on_command_callback(callback);
 }
 
+void
+SesameServerCore::set_mecha_setting(const Sesame::mecha_setting_5_t& setting) {
+	impl->set_mecha_setting(setting);
+}
+
+void
+SesameServerCore::set_mecha_status(const Sesame::mecha_status_5_t& status) {
+	impl->set_mecha_status(status);
+}
+
 std::tuple<std::string, std::string>
 SesameServerCore::create_advertisement_data_os3() const {
 	return impl->create_advertisement_data_os3();

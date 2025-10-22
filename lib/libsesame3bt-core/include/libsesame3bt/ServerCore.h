@@ -40,6 +40,8 @@ class SesameServerCore {
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);
+	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting);
+	void set_mecha_status(const Sesame::mecha_status_5_t& status);
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 

@@ -59,6 +59,9 @@ class SesameServerCoreImpl {
 	void set_on_command_callback(command_callback_t callback) { on_command_callback = callback; }
 	void set_authentication_timeout(uint32_t timeout_msec) { auth_timeout = timeout_msec; }
 
+	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { mecha_setting = setting; }
+	void set_mecha_status(const Sesame::mecha_status_5_t& status) { mecha_status = status; }
+
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 
  private:
@@ -75,6 +78,8 @@ class SesameServerCoreImpl {
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
 	std::vector<std::pair<std::optional<uint16_t>, std::optional<ServerSession>>> vsessions;
 	uint32_t auth_timeout = DEFAULT_AUTH_TIMEOUT_MSEC;
+	Sesame::mecha_setting_5_t mecha_setting{-100, 100, 0};
+	Sesame::mecha_status_5_t mecha_status{6 * 500, -32768, 0, false, false, true, false, true, false, false};
 
 	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
 	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);

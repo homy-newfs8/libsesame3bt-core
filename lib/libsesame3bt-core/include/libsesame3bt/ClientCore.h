@@ -134,7 +134,8 @@ class Status {
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(status.is_stop),
 	      _is_critical(status.is_critical),
-	      _motor_status{} {}
+	      _motor_status{},
+	      _is_clutch_failed(status.is_clutch_failed) {}
 	float voltage() const { return _voltage; }
 	[[deprecated("use battery_critical() instead")]] bool voltage_critical() const { return _battery_critical; }
 	bool battery_critical() const { return _battery_critical; }
@@ -146,6 +147,7 @@ class Status {
 	/// @note stopped is not meaningful for SESAME 3 / SESAME 4
 	bool stopped() const { return _stopped; }
 	bool is_critical() const { return _is_critical; }
+	bool is_clutch_failed() const { return _is_clutch_failed; }
 	/// @note motor_status is meaningful only for Bot (not Bot 2)
 	Sesame::motor_status_t motor_status() const { return _motor_status; }
 	uint8_t ret_code() const { return _ret_code; }
@@ -173,6 +175,7 @@ class Status {
 	bool _stopped = false;
 	bool _is_critical = false;
 	Sesame::motor_status_t _motor_status = Sesame::motor_status_t::idle;
+	bool _is_clutch_failed = false;
 	struct BatteryTable {
 		float voltage;
 		float pct;

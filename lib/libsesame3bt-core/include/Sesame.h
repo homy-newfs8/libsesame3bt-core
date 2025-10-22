@@ -219,13 +219,13 @@ class Sesame {
 		int16_t battery;
 		int16_t target;
 		int16_t position;
-		bool unknown1 : 1;
+		bool is_clutch_failed : 1;
 		bool in_lock : 1;
-		bool unknown2 : 1;
+		bool in_unlock : 1;
 		bool is_critical : 1;
 		bool is_stop : 1;
 		bool is_battery_critical : 1;
-		bool unknown3 : 1;
+		bool is_clockwise : 1;
 	};
 	struct __attribute__((packed)) publish_initial_t {
 		std::byte token[TOKEN_SIZE];

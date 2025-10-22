@@ -172,7 +172,7 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 	if (!prepare_session_key(session)) {
 		return false;
 	}
-	Sesame::response_registration_5_t resp{};
+	Sesame::response_registration_5_t resp{Sesame::result_code_t::success, mecha_status, mecha_setting, {}};
 	if (!ecc.export_pk(resp.public_key)) {
 		return false;
 	}
@@ -211,23 +211,15 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 		DEBUG_PRINTLN("Failed to send login response");
 		return false;
 	}
-	Sesame::mecha_status_5_t status{};
-	status.in_lock = true;
-	status.battery = 6.2 * 500;
-	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&status),
-	                                   sizeof(status), true, session.crypt)) {
-		DEBUG_PRINTLN("Failed to send mecha status");
-		return false;
-	}
-	Sesame::mecha_setting_5_t settings{};
-	settings.lock_position = 20263;
-	settings.unlock_position = 20157;
-	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&settings),
-	                                   sizeof(settings), true, session.crypt)) {
-		DEBUG_PRINTLN("Failed to send mecha setting");
-		return false;
-	}
 	session.set_state(session_state_t::running);
+	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&mecha_status),
+	                                   sizeof(mecha_status), true, session.crypt)) {
+		DEBUG_PRINTLN("Failed to send mecha status");
+	}
+	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&mecha_setting),
+	                                   sizeof(mecha_setting), true, session.crypt)) {
+		DEBUG_PRINTLN("Failed to send mecha setting");
+	}
 
 	return true;
 }
