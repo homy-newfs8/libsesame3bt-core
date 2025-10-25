@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.15.0] 2025-10-25
+- mecha_status_5_t flag fields updated (aligned with API spec)
+- SesameServer changes
+	- The default status value sent on registration / login has been changed to the appropriate value.
+	- Add response values configuration functions. Can configure response status values on registration / login.
+		- set_mecha_status()
+		- set_mecha_setting()
+
 ## [v0.14.0] 2025-09-15
 - Fix Remote, Bot2 battery voltage (was doubled)
 - Support Bike 2.
