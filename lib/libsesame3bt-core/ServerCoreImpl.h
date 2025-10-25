@@ -79,7 +79,7 @@ class SesameServerCoreImpl {
 	std::vector<std::pair<std::optional<uint16_t>, std::optional<ServerSession>>> vsessions;
 	uint32_t auth_timeout = DEFAULT_AUTH_TIMEOUT_MSEC;
 	Sesame::mecha_setting_5_t mecha_setting{-100, 100, 0};
-	Sesame::mecha_status_5_t mecha_status{6 * 500, -32768, 0, false, false, true, false, true, false, false};
+	Sesame::mecha_status_5_t mecha_status{6 * 500, -32768, 0, false, true, false, false, true, false, false};
 
 	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
 	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);
