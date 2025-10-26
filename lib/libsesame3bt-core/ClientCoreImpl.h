@@ -51,6 +51,7 @@ class SesameClientCoreImpl {
 	void disconnect();
 	bool has_setting() const;
 	void request_status();
+	bool is_key_set() const { return _is_key_set; }
 
  private:
 	friend class OS2Handler;
@@ -68,7 +69,7 @@ class SesameClientCoreImpl {
 	std::optional<CryptHandler> crypt;
 	std::optional<Handler> handler;
 
-	bool is_key_set = false;
+	bool _is_key_set = false;
 
 	SesameClientCore& core;
 

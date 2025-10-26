@@ -106,6 +106,10 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 		DEBUG_PRINTLN("begin() not finished");
 		return;
 	}
+	if (!is_key_set()) {
+		DEBUG_PRINTLN("Keys are not set");
+		return;
+	}
 	auto rc = transport.decode(p, len, *crypt);
 	if (rc != SesameBLETransport::decode_result_t::received) {
 		return;

@@ -234,6 +234,7 @@ class SesameClientCore {
 	bool click(std::string_view tag);
 	bool request_history();
 	bool is_session_active() const;
+	bool is_key_set() const;
 	void set_status_callback(status_callback_t callback);
 	void set_state_callback(state_callback_t callback);
 	void set_history_callback(history_callback_t callback);

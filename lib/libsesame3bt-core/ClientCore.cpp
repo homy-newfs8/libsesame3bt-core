@@ -139,6 +139,17 @@ SesameClientCore::is_session_active() const {
 }
 
 /**
+ * @brief Test if keys are set.
+ *
+ * @return true
+ * @return false
+ */
+bool
+SesameClientCore::is_key_set() const {
+	return impl->is_key_set();
+}
+
+/**
  * @brief Set callback for SESAME status changed.
  *
  * @param callback

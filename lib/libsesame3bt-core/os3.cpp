@@ -20,7 +20,7 @@ OS3Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 		DEBUG_PRINTLN("secret_str invalid format");
 		return false;
 	}
-	client->is_key_set = true;
+	client->_is_key_set = true;
 	return true;
 }
 
@@ -28,7 +28,7 @@ bool
 OS3Handler::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                      const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	std::copy(std::cbegin(secret_key), std::cend(secret_key), std::begin(sesame_secret));
-	client->is_key_set = true;
+	client->_is_key_set = true;
 
 	return true;
 }

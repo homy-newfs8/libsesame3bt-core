@@ -46,7 +46,7 @@ OS2Handler::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
 		return false;
 	}
 	std::copy(std::cbegin(secret_key), std::cend(secret_key), std::begin(sesame_secret));
-	client->is_key_set = true;
+	client->_is_key_set = true;
 
 	return true;
 }
