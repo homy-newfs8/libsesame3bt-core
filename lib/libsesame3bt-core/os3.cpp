@@ -178,7 +178,7 @@ OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 			history.tag_len = tag_str.length();
 			*std::copy(std::begin(tag_str), std::end(tag_str), history.tag) = 0;
 		} else if (in_len == sizeof(Sesame::response_history_5_t) + 18) {
-			history.trigger_type = static_cast<trigger_type_t>(tag_data[1]);
+			history.history_tag_type = static_cast<history_tag_type_t>(tag_data[1]);
 			auto str = util::bin2hex(tag_data + 2, 16);
 			history.tag_len = str.length();
 			std::copy(str.cbegin(), str.cend(), history.tag);

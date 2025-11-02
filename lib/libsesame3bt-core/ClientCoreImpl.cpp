@@ -200,11 +200,21 @@ SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_vi
 	} else {
 		auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
 		tagchars[0] = std::size(truncated);
-		std::copy(std::begin(truncated), std::end(truncated), &tagchars[1]);
+		std::copy(std::cbegin(truncated), std::cend(truncated), &tagchars[1]);
 	}
 	auto tagbytes = reinterpret_cast<std::byte*>(tagchars.data());
 	return handler->send_command(Sesame::op_code_t::async, code, tagbytes,
 	                             handler->get_cmd_tag_size(std::to_integer<size_t>(tagbytes[0])), true);
+}
+
+bool
+SesameClientCoreImpl::send_cmd_with_uuid_tag(Sesame::item_code_t code,
+                                             history_tag_type_t type,
+                                             const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
+	std::array<std::byte, 2 + HISTORY_TAG_UUID_SIZE> tagbytes{};
+	tagbytes[1] = std::byte(type);
+	std::copy(std::cbegin(uuid), std::cend(uuid), std::begin(tagbytes) + 2);
+	return handler->send_command(Sesame::op_code_t::async, code, tagbytes.data(), sizeof(tagbytes), true);
 }
 
 bool
@@ -217,8 +227,17 @@ SesameClientCoreImpl::unlock(std::string_view tag) {
 }
 
 bool
+SesameClientCoreImpl::unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
+	if (!is_session_active()) {
+		DEBUG_PRINTLN("Cannot operate while session is not active");
+		return false;
+	}
+	return send_cmd_with_uuid_tag(Sesame::item_code_t::unlock, type, uuid);
+}
+
+bool
 SesameClientCoreImpl::lock(std::string_view tag) {
-	if (model == model_t::sesame_bike) {
+	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
 		DEBUG_PRINTLN("SESAME Bike do not support locking");
 		return false;
 	}
@@ -227,6 +246,19 @@ SesameClientCoreImpl::lock(std::string_view tag) {
 		return false;
 	}
 	return send_cmd_with_tag(Sesame::item_code_t::lock, tag);
+}
+
+bool
+SesameClientCoreImpl::lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
+	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
+		DEBUG_PRINTLN("SESAME Bike do not support locking");
+		return false;
+	}
+	if (!is_session_active()) {
+		DEBUG_PRINTLN("Cannot operate while session is not active");
+		return false;
+	}
+	return send_cmd_with_uuid_tag(Sesame::item_code_t::lock, type, uuid);
 }
 
 bool

@@ -81,6 +81,19 @@ SesameClientCore::unlock(std::string_view tag) {
 }
 
 /**
+ * @brief Unlock SESAME.
+ *
+ * @param type Type of history tag.
+ * @param uuid UUID value for history entry.
+ * @return true
+ * @return false
+ */
+bool
+SesameClientCore::unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
+	return impl->unlock(type, uuid);
+}
+
+/**
  * @brief Lock SESAME.
  *
  * @param tag TAG value for history entry. Ignored on Bot / Bot 2.
@@ -90,6 +103,19 @@ SesameClientCore::unlock(std::string_view tag) {
 bool
 SesameClientCore::lock(std::string_view tag) {
 	return impl->lock(tag);
+}
+
+/**
+ * @brief Lock SESAME.
+ *
+ * @param type Type of history tag.
+ * @param uuid UUID value for history entry.
+ * @return true
+ * @return false
+ */
+bool
+SesameClientCore::lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
+	return impl->lock(type, uuid);
 }
 
 /**

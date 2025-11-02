@@ -13,7 +13,7 @@ using registration_callback_t = std::function<void(uint16_t session_id, const st
 using command_callback_t = std::function<Sesame::result_code_t(uint16_t session_id,
                                                                Sesame::item_code_t cmd,
                                                                const std::string& tag,
-                                                               std::optional<trigger_type_t> trigger)>;
+                                                               std::optional<history_tag_type_t> trigger)>;
 
 class SesameServerCore {
  public:

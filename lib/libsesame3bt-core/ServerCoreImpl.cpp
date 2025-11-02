@@ -227,16 +227,16 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 bool
 SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_cmd");
-	if (size == 0 || size < static_cast<size_t>(payload[0]) + 1) {
+	if (size == 0 || size < std::to_integer<size_t>(payload[0]) + 1) {
 		DEBUG_PRINTLN("Too short command, ignored");
 		return false;
 	}
-	std::optional<trigger_type_t> trigger_type;
+	std::optional<history_tag_type_t> trigger_type;
 	std::string tstr;
 	if (std::to_integer<uint8_t>(payload[0]) > 0) {
-		tstr = std::string(reinterpret_cast<const char*>(payload + 1), static_cast<size_t>(payload[0]));
+		tstr = std::string(reinterpret_cast<const char*>(payload + 1), std::to_integer<size_t>(payload[0]));
 	} else if (size == 18) {
-		trigger_type = static_cast<trigger_type_t>(payload[1]);
+		trigger_type = static_cast<history_tag_type_t>(payload[1]);
 		tstr = util::bin2hex(payload + 2, 16);
 	} else {
 		tstr = {};

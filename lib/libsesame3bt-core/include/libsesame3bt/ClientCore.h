@@ -193,7 +193,10 @@ class Status {
 struct History {
 	Sesame::result_code_t result;
 	Sesame::history_type_t type;
-	std::optional<trigger_type_t> trigger_type;
+	union {
+		std::optional<history_tag_type_t> trigger_type [[deprecated("use history_tag_type instead")]];
+		std::optional<history_tag_type_t> history_tag_type;
+	};
 	int32_t record_id;
 	time_t time;
 	uint8_t tag_len;
@@ -229,7 +232,9 @@ class SesameClientCore {
 	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
 	bool set_keys(std::string_view pk_str, std::string_view secret_str);
 	bool unlock(std::string_view tag);
+	bool unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	bool lock(std::string_view tag);
+	bool lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	bool click(const std::optional<uint8_t> script_no = std::nullopt);
 	bool click(std::string_view tag);
 	bool request_history();

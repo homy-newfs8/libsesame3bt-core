@@ -36,7 +36,9 @@ class SesameClientCoreImpl {
 	void on_received(const std::byte*, size_t);
 	void on_disconnected();
 	bool unlock(std::string_view tag);
+	bool unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	bool lock(std::string_view tag);
+	bool lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	bool click(const std::optional<uint8_t> script_no);
 	bool click(std::string_view tag);
 	bool request_history();
@@ -78,6 +80,9 @@ class SesameClientCoreImpl {
 	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
 	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
+	bool send_cmd_with_uuid_tag(Sesame::item_code_t code,
+	                            history_tag_type_t type,
+	                            const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	void handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
 };
 

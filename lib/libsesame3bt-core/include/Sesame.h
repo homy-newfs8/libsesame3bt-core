@@ -5,20 +5,28 @@
 
 namespace libsesame3bt {
 
-/// @warning Not well defined values, may be changed in future
-enum class trigger_type_t : uint8_t {
-	ic_card = 0,        // touch, face
-	face_finger = 1,    // face
-	face = 3,           // face
-	face_vein = 4,      // face
-	touch_finger = 6,   // touch success, unknown fingerprint
-	open_sensor = 7,    // open sensor
-	face_close = 9,     // face close switch, unknown fingerprint
-	remote = 10,        // remote
-	remote_nano = 11,   // remote nano
-	android_ble = 14,   // android app (from Android SDK)
-	android_wifi = 16,  // from Android SDK
+static constexpr size_t HISTORY_TAG_UUID_SIZE = 16;
+enum class history_tag_type_t : uint8_t {
+	nfc_card = 0,
+	fingerprint,
+	password,
+	face,
+	palm_vein,
+	touch_pro_lock,
+	touch_lock,
+	open_sensor,
+	face_pro_lock,
+	face_lock,
+	remote,
+	remote_nano,
+	biz_user,
+	web_api,
+	android_ble,
+	ios_ble,
+	android_wifi,
+	ios_wifi,
 };
+using trigger_type_t [[deprecated("use history_tag_type_t instead")]] = history_tag_type_t;
 
 class Sesame {
  public:
