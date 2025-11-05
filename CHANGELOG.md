@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.16.0] 2025-11-05
+- Add `lock(history_tag_type_t, UUID)` and `unlock`. Enable pretending recent Touch / Face / Remote devices.
+- Add `SesameClientCore::is_key_set()`.
+- Type `trigger_type_t` renamed to `history_tag_type_t`.
+- Also enum value names changed in `history_tag_type_t` (Aligned with API document).
+
 ## [v0.15.0] 2025-10-25
 - mecha_status_5_t flag fields updated (aligned with API spec)
 - SesameServer changes
