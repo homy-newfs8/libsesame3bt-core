@@ -38,25 +38,14 @@ SesameClientCoreImpl::disconnect() {
 bool
 SesameClientCoreImpl::begin(model_t model) {
 	this->model = model;
-	switch (model) {
-		case model_t::sesame_3:
-		case model_t::sesame_bot:
-		case model_t::sesame_bike:
-		case model_t::sesame_4:
+
+	auto os = Sesame::get_os_ver(model);
+	switch (os) {
+		case Sesame::os_ver_t::os2:
 			crypt.emplace(std::in_place_type<OS2IVHandler>);
 			handler.emplace(std::in_place_type<OS2Handler>, this, transport, *crypt);
 			break;
-		case model_t::sesame_5:
-		case model_t::sesame_bike_2:
-		case model_t::sesame_5_pro:
-		case model_t::open_sensor_1:
-		case model_t::sesame_touch_pro:
-		case model_t::sesame_touch:
-		case model_t::remote:
-		case model_t::remote_nano:
-		case model_t::sesame_bot_2:
-		case model_t::sesame_face_pro:
-		case model_t::sesame_face:
+		case Sesame::os_ver_t::os3:
 			crypt.emplace(std::in_place_type<OS3IVHandler>);
 			handler.emplace(std::in_place_type<OS3Handler>, this, transport, *crypt);
 			break;
@@ -195,7 +184,7 @@ SesameClientCoreImpl::fire_history_callback(const History& history) {
 bool
 SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
-	if (model == Sesame::model_t::sesame_bot_2) {
+	if (model == model_t::sesame_bot_2) {
 		tagchars[0] = 0;
 	} else {
 		auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
@@ -288,7 +277,7 @@ SesameClientCoreImpl::click(const std::optional<uint8_t> script_no) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
 		return false;
 	}
-	if (model == Sesame::model_t::sesame_bot) {
+	if (model == model_t::sesame_bot) {
 		if (script_no == 0) {
 			return unlock("");
 		} else if (script_no == 1) {
@@ -338,6 +327,9 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::sesame_bike_2:
 		case model_t::sesame_face_pro:  // may be
 		case model_t::sesame_face:
+		case model_t::sesame_face_pro_ai:
+		case model_t::sesame_face_ai:
+		case model_t::open_sensor_2:  // may be
 			return false;
 		default:
 			return true;

@@ -1,7 +1,9 @@
 #pragma once
 
 #if LIBSESAME3BTCORE_DEBUG
+#ifdef ARDUINO
 #include <Arduino.h>
+#endif
 #define DEBUG_PRINTLN(...)      \
 	do {                          \
 		Serial.printf(__VA_ARGS__); \
