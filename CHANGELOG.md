@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.16.1] 2025-12-13
+- Do not drop UUID history tag with extra data. Extra data is not handled yet (may be battery voltages).
+- Forbit command with uuid tag on OS2 devices.
+- Add Face AI models to `Sesame::model_t`.
+
 ## [v0.16.0] 2025-11-05
 - Add `lock(history_tag_type_t, UUID)` and `unlock`. Enable pretending recent Touch / Face / Remote devices.
 - Add `SesameClientCore::is_key_set()`.
