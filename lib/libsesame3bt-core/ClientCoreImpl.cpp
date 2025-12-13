@@ -218,7 +218,7 @@ SesameClientCoreImpl::unlock(std::string_view tag) {
 bool
 SesameClientCoreImpl::unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
 	if (Sesame::get_os_ver(model) != Sesame::os_ver_t::os3) {
-		DEBUG_PRINTLN("UUID tag is supported on OS3 devices");
+		DEBUG_PRINTLN("UUID tag is not supported on OS2 devices");
 		return false;
 	}
 	if (!is_session_active()) {

@@ -235,7 +235,7 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 	std::string tstr;
 	if (std::to_integer<uint8_t>(payload[0]) > 0) {
 		tstr = std::string(reinterpret_cast<const char*>(payload + 1), std::to_integer<size_t>(payload[0]));
-	} else if (size == 18) {
+	} else if (size >= 18) {
 		trigger_type = static_cast<history_tag_type_t>(payload[1]);
 		tstr = util::bin2hex(payload + 2, 16);
 	} else {
