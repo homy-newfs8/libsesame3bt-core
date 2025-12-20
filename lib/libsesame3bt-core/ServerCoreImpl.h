@@ -58,9 +58,11 @@ class SesameServerCoreImpl {
 	void set_on_registration_callback(registration_callback_t callback) { on_registration_callback = callback; }
 	void set_on_command_callback(command_callback_t callback) { on_command_callback = callback; }
 	void set_authentication_timeout(uint32_t timeout_msec) { auth_timeout = timeout_msec; }
+	void set_on_login_callback(login_callback_t callback) { on_login_callback = callback; }
 
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { mecha_setting = setting; }
 	void set_mecha_status(const Sesame::mecha_status_5_t& status) { mecha_status = status; }
+	void set_auto_send_flags(auto_send::flags flags) { auto_send_flags = flags; }
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 
@@ -72,6 +74,7 @@ class SesameServerCoreImpl {
 	Ecc ecc;
 	registration_callback_t on_registration_callback{};
 	command_callback_t on_command_callback{};
+	login_callback_t on_login_callback{};
 	bool registered = false;
 	Sesame::model_t model = Sesame::model_t::unknown;
 	uint8_t uuid[16];
@@ -80,6 +83,8 @@ class SesameServerCoreImpl {
 	uint32_t auth_timeout = DEFAULT_AUTH_TIMEOUT_MSEC;
 	Sesame::mecha_setting_5_t mecha_setting{-100, 100, 0};
 	Sesame::mecha_status_5_t mecha_status{6 * 500, -32768, 0, false, true, false, false, true, false, false};
+	auto_send::flags auto_send_flags =
+	    static_cast<auto_send::flags>(auto_send::flags::mecha_setting | auto_send::flags::mecha_status);
 
 	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
 	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);

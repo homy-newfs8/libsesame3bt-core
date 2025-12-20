@@ -212,13 +212,20 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 		return false;
 	}
 	session.set_state(session_state_t::running);
-	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&mecha_status),
-	                                   sizeof(mecha_status), true, session.crypt)) {
-		DEBUG_PRINTLN("Failed to send mecha status");
+	if (auto_send_flags & auto_send::flags::mecha_status) {
+		if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&mecha_status),
+		                                   sizeof(mecha_status), true, session.crypt)) {
+			DEBUG_PRINTLN("Failed to send mecha status");
+		}
 	}
-	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&mecha_setting),
-	                                   sizeof(mecha_setting), true, session.crypt)) {
-		DEBUG_PRINTLN("Failed to send mecha setting");
+	if (auto_send_flags & auto_send::flags::mecha_setting) {
+		if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&mecha_setting),
+		                                   sizeof(mecha_setting), true, session.crypt)) {
+			DEBUG_PRINTLN("Failed to send mecha setting");
+		}
+	}
+	if (on_login_callback) {
+		on_login_callback(session.session_id);
 	}
 
 	return true;

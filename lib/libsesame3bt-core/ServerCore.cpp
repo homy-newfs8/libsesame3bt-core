@@ -69,14 +69,36 @@ SesameServerCore::set_on_command_callback(command_callback_t callback) {
 	impl->set_on_command_callback(callback);
 }
 
+/// @brief Set login callback
+/// @note This callback is called when a client successfully logs in. If set_auto_send_flags() includes mecha_status or mecha_setting, those data are sent before this callback returns.
+/// @param callback
+void
+SesameServerCore::set_on_login_callback(login_callback_t callback) {
+	impl->set_on_login_callback(callback);
+}
+
+/// @brief Set mecha setting
+/// @note This setting is sent to the client after login if auto-send flag includes mecha_setting.
+/// @param setting
 void
 SesameServerCore::set_mecha_setting(const Sesame::mecha_setting_5_t& setting) {
 	impl->set_mecha_setting(setting);
 }
 
+/// @brief Set mecha status
+/// @note This status is sent to the client after login if auto-send flag includes mecha_status.
+/// @param status
 void
 SesameServerCore::set_mecha_status(const Sesame::mecha_status_5_t& status) {
 	impl->set_mecha_status(status);
+}
+
+/// @brief Set auto-send flags
+/// @note If the specified flags are set, the corresponding data are automatically sent to the client after login. Default is (mecha_status | mecha_setting).
+/// @param flags
+void
+SesameServerCore::set_auto_send_flags(auto_send::flags flags) {
+	impl->set_auto_send_flags(flags);
 }
 
 std::tuple<std::string, std::string>

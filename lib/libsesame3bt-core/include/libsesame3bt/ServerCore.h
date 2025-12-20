@@ -14,6 +14,15 @@ using command_callback_t = std::function<Sesame::result_code_t(uint16_t session_
                                                                Sesame::item_code_t cmd,
                                                                const std::string& tag,
                                                                std::optional<history_tag_type_t> trigger)>;
+using login_callback_t = std::function<void(uint16_t session_id)>;
+
+namespace auto_send {
+enum flags : uint8_t {
+	none = 0,
+	mecha_status = 1 << 0,
+	mecha_setting = 1 << 1,
+};
+}
 
 class SesameServerCore {
  public:
@@ -40,8 +49,10 @@ class SesameServerCore {
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);
+	void set_on_login_callback(login_callback_t callback);
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting);
 	void set_mecha_status(const Sesame::mecha_status_5_t& status);
+	void set_auto_send_flags(auto_send::flags flags);
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
 
