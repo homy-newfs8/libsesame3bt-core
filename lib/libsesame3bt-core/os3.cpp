@@ -122,17 +122,17 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	DEBUG_PRINTLN("status: %s", util::bin2hex(in, in_len).c_str());
 	if (client->model == Sesame::model_t::sesame_bot_2 && in_len == sizeof(Sesame::mecha_bot_2_status_t)) {
 		const auto* msg = reinterpret_cast<const Sesame::mecha_bot_2_status_t*>(in);
-		client->sesame_status = {*msg, voltage_scale(client->model)};
+		client->sesame_status = {*msg, client->model};
 	} else if (client->model == Sesame::model_t::sesame_bike_2 && in_len == sizeof(Sesame::mecha_bike_2_status_t)) {
 		const auto* msg = reinterpret_cast<const Sesame::mecha_bike_2_status_t*>(in);
-		client->sesame_status = {*msg, voltage_scale(client->model)};
+		client->sesame_status = {*msg, client->model};
 	} else {
 		if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
 			DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored", in_len);
 			return;
 		}
 		const auto* msg = reinterpret_cast<const Sesame::publish_mecha_status_5_t*>(in);
-		client->sesame_status = {msg->status, voltage_scale(client->model)};
+		client->sesame_status = {msg->status, client->model};
 	}
 	client->fire_status_callback();
 	status_received = true;

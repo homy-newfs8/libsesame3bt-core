@@ -3,6 +3,8 @@
 
 namespace libsesame3bt::core {
 
+using model_t = Sesame::model_t;
+
 SesameClientCore::SesameClientCore(SesameBLEBackend& backend) : impl(std::make_unique<SesameClientCoreImpl>(backend, *this)) {}
 
 SesameClientCore::~SesameClientCore() {}
@@ -260,25 +262,14 @@ SesameClientCore::request_status() {
 /**
  * @brief Convert voltage to estimated battery remaining
  *
- * @param voltage
- * @return float battery remaining (0-100%)
+ * @param voltage voltage
+ * @param model Sesame model (optional). If not specified, sesame_5 is assumed.
+ * @return float battery remaining percentage (0-100)
  */
 float
-Status::voltage_to_pct(float voltage) {
-	if (voltage >= batt_tbl[0].voltage) {
-		return batt_tbl[0].pct;
-	}
-	if (voltage <= batt_tbl[std::size(batt_tbl) - 1].voltage) {
-		return batt_tbl[std::size(batt_tbl) - 1].pct;
-	}
-	for (auto i = 1; i < std::size(batt_tbl); i++) {
-		if (voltage >= batt_tbl[i].voltage) {
-			return (voltage - batt_tbl[i].voltage) / (batt_tbl[i - 1].voltage - batt_tbl[i].voltage) *
-			           (batt_tbl[i - 1].pct - batt_tbl[i].pct) +
-			       batt_tbl[i].pct;
-		}
-	}
-	return 0.0f;  // Never reach
+Status::voltage_to_pct(float voltage, std::optional<Sesame::model_t> model) {
+	return model.has_value() ? scaled_voltage_to_pct(scaled_voltage(voltage, *model), *model)
+	                         : scaled_voltage_to_pct(scaled_voltage(voltage, model_t::sesame_5), model_t::sesame_5);
 }
 
 /**
@@ -289,8 +280,110 @@ Status::voltage_to_pct(float voltage) {
  * @return false
  */
 bool
-libsesame3bt::core::SesameClientCore::has_setting() const {
+SesameClientCore::has_setting() const {
 	return impl->has_setting();
+}
+
+/**
+ * @brief number of series batterys
+ *
+ * @param model
+ * @return uint8_t
+ */
+uint8_t
+Status::battery_s(model_t model) {
+	switch (model) {
+		case model_t::sesame_bot:
+		case model_t::sesame_bike:
+		case model_t::sesame_bot_2:
+		case model_t::sesame_bike_2:
+		case model_t::open_sensor_1:
+		case model_t::remote:
+		case model_t::remote_nano:
+			return 1;
+		default:
+			return 2;
+	}
+}
+
+/**
+ * @brief Convert raw status value to voltage
+ *
+ * @param status_value
+ * @param model
+ * @return float
+ */
+float
+Status::status_value_to_voltage(uint16_t status_value, Sesame::model_t model) {
+	auto os = Sesame::get_os_ver(model);
+	switch (os) {
+		case Sesame::os_ver_t::os2:
+			return status_value * 3.6f * battery_s(model) / 1023;
+		case Sesame::os_ver_t::os3:
+			return status_value * battery_s(model) / 1000.0f;
+		default:
+			return 0.0f;
+	}
+}
+
+/**
+ * @brief Return 7.2V scaled voltage for OS3 devices
+ *
+ * @param status_value
+ * @return float
+ */
+float
+Status::status_value_to_scaled_voltage_os3(uint16_t status_value) {
+	return status_value * 2.0f / 1000;
+}
+
+/**
+ * @brief Scale voltage to 7.2V scale
+ *
+ * @param voltage
+ * @param model
+ * @return float
+ */
+float
+Status::scaled_voltage(float voltage, Sesame::model_t model) {
+	return voltage * 2.0f / battery_s(model);
+}
+
+/**
+ * @brief Calculate battery percentage from scaled voltage
+ * @note Currently, only OpenSensor uses a different table from the other models.
+ *
+ * @param voltage 7.2V scaled voltage
+ * @param model
+ * @return float battery remaining percentage (0-100)
+ */
+float
+Status::scaled_voltage_to_pct(float voltage, Sesame::model_t model) {
+	const BatteryTable* table = nullptr;
+	size_t table_size = 0;
+	if (model == model_t::open_sensor_1) {
+		table = batt_tbl_open_sensor;
+		table_size = std::size(batt_tbl_open_sensor);
+	} else {
+		table = batt_tbl;
+		table_size = std::size(batt_tbl);
+	}
+	if (!table) {
+		return 0.0f;
+	}
+	if (voltage >= table[0].voltage) {
+		return table[0].pct;
+	}
+	if (voltage <= table[table_size - 1].voltage) {
+		return table[table_size - 1].pct;
+	}
+	for (size_t i = 1; i < table_size; i++) {
+		if (voltage >= table[i].voltage) {
+			return (voltage - table[i].voltage) / (table[i - 1].voltage - table[i].voltage) * (table[i - 1].pct - table[i].pct) +
+			       table[i].pct;
+		}
+	}
+	return 0.0f;
 }
 
 }  // namespace libsesame3bt::core

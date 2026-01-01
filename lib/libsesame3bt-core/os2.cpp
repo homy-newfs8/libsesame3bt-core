@@ -172,10 +172,9 @@ OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 void
 OS2Handler::update_sesame_status(const Sesame::mecha_status_t& mecha_status) {
 	if (client->model == Sesame::model_t::sesame_bot) {
-		client->sesame_status = {mecha_status.bot, battery_voltage(client->model, mecha_status.bot.battery)};
+		client->sesame_status = {mecha_status.bot, client->model};
 	} else {
-		client->sesame_status = {mecha_status.lock, battery_voltage(client->model, mecha_status.lock.battery),
-		                         voltage_scale(client->model)};
+		client->sesame_status = {mecha_status.lock, client->model};
 	}
 }
 void
@@ -236,20 +235,6 @@ OS2Handler::create_key_pair(std::array<std::byte, Sesame::PK_SIZE>& bin_pk) {
 		return false;
 	}
 	return true;
-}
-
-float
-OS2Handler::battery_voltage(Sesame::model_t model, int16_t battery) {
-	switch (model) {
-		case Sesame::model_t::sesame_3:
-		case Sesame::model_t::sesame_4:
-			return battery * 7.2f / 1023;
-		case Sesame::model_t::sesame_bike:
-		case Sesame::model_t::sesame_bot:
-			return battery * 3.6f / 1023;
-		default:
-			return 0.0f;
-	}
 }
 
 bool

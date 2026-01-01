@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.17.0] 2026-01-XX
+- Add `set_auto_send_flags()` and `set_on_login_callback()`.
+- Restructure voltage handling functions.
+- Add optional model parameter to `Status::voltage_to_pct()`.
+
 ## [v0.16.1] 2025-12-13
 - Do not drop UUID history tag with extra data. Extra data is not handled yet (may be battery voltages).
 - Forbit command with uuid tag on OS2 devices.

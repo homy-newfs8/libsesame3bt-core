@@ -84,6 +84,11 @@ class BotSetting {
 	Sesame::mecha_setting_t setting;
 };
 
+struct BatteryTable {
+	float voltage;
+	float pct;
+};
+
 /**
    * @brief Device status
    *
@@ -91,9 +96,9 @@ class BotSetting {
 class Status {
  public:
 	Status() {}
-	Status(const Sesame::mecha_status_t::mecha_lock_status_t& status, float voltage, int8_t vol_scale)
-	    : _voltage(voltage),
-	      _batt_pct(voltage_to_pct(voltage * vol_scale)),
+	Status(const Sesame::mecha_status_t::mecha_lock_status_t& status, Sesame::model_t model)
+	    : _voltage(status_value_to_voltage(status.battery, model)),
+	      _batt_pct(voltage_to_pct(_voltage, model)),
 	      _target(status.target),
 	      _position(status.position),
 	      _ret_code(status.retcode),
@@ -102,31 +107,31 @@ class Status {
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(false),
 	      _motor_status{} {}
-	Status(const Sesame::mecha_status_t::mecha_bot_status_t& status, float voltage)
-	    : _voltage(voltage),
-	      _batt_pct(voltage_to_pct(voltage * 2)),
+	Status(const Sesame::mecha_status_t::mecha_bot_status_t& status, Sesame::model_t model)
+	    : _voltage(status_value_to_voltage(status.battery, model)),
+	      _batt_pct(voltage_to_pct(_voltage, model)),
 	      _in_lock(status.in_lock),
 	      _in_unlock(status.in_unlock),
 	      _battery_critical(status.is_battery_critical),
 	      _stopped(status.motor_status == Sesame::motor_status_t::idle || status.motor_status == Sesame::motor_status_t::holding),
 	      _motor_status(status.motor_status) {}
-	Status(const Sesame::mecha_bot_2_status_t& status, int8_t vol_scale)
-	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
-	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	Status(const Sesame::mecha_bot_2_status_t& status, Sesame::model_t model)
+	    : _voltage(status_value_to_voltage(status.battery, model)),
+	      _batt_pct(voltage_to_pct(_voltage, model)),
 	      _in_lock(status.in_lock),
 	      _in_unlock(!status.in_lock),
 	      _stopped(status.is_idle),
 	      _motor_status{} {};
-	Status(const Sesame::mecha_bike_2_status_t& status, int8_t vol_scale)
-	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
-	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	Status(const Sesame::mecha_bike_2_status_t& status, Sesame::model_t model)
+	    : _voltage(status_value_to_voltage(status.battery, model)),
+	      _batt_pct(voltage_to_pct(_voltage, model)),
 	      _in_lock(status.in_lock),
 	      _in_unlock(!status.in_lock),
 	      _stopped(status.is_stop),
 	      _motor_status{} {}
-	Status(const Sesame::mecha_status_5_t& status, int8_t vol_scale)
-	    : _voltage(status.battery * 2.0f / vol_scale / 1000),
-	      _batt_pct(voltage_to_pct(_voltage * vol_scale)),
+	Status(const Sesame::mecha_status_5_t& status, Sesame::model_t model)
+	    : _voltage(status_value_to_voltage(status.battery, model)),
+	      _batt_pct(voltage_to_pct(_voltage, model)),
 	      _target(status.target),
 	      _position(status.position),
 	      _in_lock(status.in_lock),
@@ -160,7 +165,10 @@ class Status {
 		       _in_unlock == that._in_unlock && _stopped == that._stopped && _motor_status == that._motor_status;
 	}
 	bool operator!=(const Status& that) const { return !(*this == that); }
-	static float voltage_to_pct(float voltage);
+	static float voltage_to_pct(float voltage, std::optional<Sesame::model_t> model = std::nullopt);
+	static float status_value_to_voltage(uint16_t status_value, Sesame::model_t model);
+	static float status_value_to_scaled_voltage_os3(uint16_t status_value);
+	static float scaled_voltage_to_pct(float voltage, Sesame::model_t model);
 
  private:
 	Sesame::model_t _model = Sesame::model_t::unknown;
@@ -176,14 +184,16 @@ class Status {
 	bool _is_critical = false;
 	Sesame::motor_status_t _motor_status = Sesame::motor_status_t::idle;
 	bool _is_clutch_failed = false;
-	struct BatteryTable {
-		float voltage;
-		float pct;
-	};
+	static uint8_t battery_s(Sesame::model_t model);
+	static float scaled_voltage(float voltage, Sesame::model_t model);
 	static inline const BatteryTable batt_tbl[] = {{5.85f, 100.0f}, {5.82f, 95.0f}, {5.79f, 90.0f}, {5.76f, 85.0f},
 	                                               {5.73f, 80.0f},  {5.70f, 70.0f}, {5.65f, 60.0f}, {5.60f, 50.0f},
 	                                               {5.55f, 40.0f},  {5.50f, 32.0f}, {5.40f, 21.0f}, {5.20f, 13.0f},
 	                                               {5.10f, 10.0f},  {5.0f, 7.0f},   {4.8f, 3.0f},   {4.6f, 0.0f}};
+	static inline const BatteryTable batt_tbl_open_sensor[] = {{5.820f, 100.0f}, {5.810f, 95.0f}, {5.755f, 90.0f}, {5.735f, 85.0f},
+	                                                           {5.665f, 80.0f},  {5.620f, 70.0f}, {5.585f, 60.0f}, {5.556f, 50.0f},
+	                                                           {5.550f, 40.0f},  {5.530f, 32.0f}, {5.450f, 21.0f}, {5.400f, 13.0f},
+	                                                           {5.320f, 10.0f},  {5.280f, 7.0f},  {5.225f, 3.0f},  {5.150f, 0.0f}};
 };
 
 /**

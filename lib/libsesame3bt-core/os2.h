@@ -60,10 +60,6 @@ class OS2Handler {
 	                           const std::byte (&sesame_token)[Sesame::TOKEN_SIZE],
 	                           std::array<std::byte, AES_BLOCK_SIZE>& tag_response);
 	void update_sesame_status(const Sesame::mecha_status_t& mecha_status);
-	static float battery_voltage(Sesame::model_t model, int16_t battery);
-	static constexpr int8_t voltage_scale(Sesame::model_t model) {
-		return model == Sesame::model_t::sesame_bike || model == Sesame::model_t::sesame_bot ? 2 : 1;
-	};
 };
 
 }  // namespace libsesame3bt::core
