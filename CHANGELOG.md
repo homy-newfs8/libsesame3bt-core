@@ -4,6 +4,7 @@
 - Add `set_auto_send_flags()` and `set_on_login_callback()`.
 - Restructure voltage handling functions.
 - Add optional model parameter to `Status::voltage_to_pct()`.
+- Add scaled voltage parameter to SesameServerCore `command_callback_t` (breaking change).
 
 ## [v0.16.1] 2025-12-13
 - Do not drop UUID history tag with extra data. Extra data is not handled yet (may be battery voltages).

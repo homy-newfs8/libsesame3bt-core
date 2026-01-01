@@ -1,6 +1,7 @@
 #pragma once
 #include <array>
 #include <atomic>
+#include <cmath>
 #include <ctime>
 #include <functional>
 #include <memory>
@@ -210,6 +211,7 @@ struct History {
 	int32_t record_id;
 	time_t time;
 	uint8_t tag_len;
+	float scaled_voltage = NAN;
 	char tag[Sesame::MAX_HISTORY_TAG_SIZE + 1];
 };
 
