@@ -1,6 +1,6 @@
 # Changelog
 
-## [v0.17.0] 2026-01-XX
+## [v0.17.0] 2026-01-03
 - Add `set_auto_send_flags()` and `set_on_login_callback()`.
 - Restructure voltage handling functions.
 - Add optional model parameter to `Status::voltage_to_pct()`.
