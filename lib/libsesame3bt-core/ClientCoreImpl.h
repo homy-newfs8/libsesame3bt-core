@@ -39,7 +39,7 @@ class SesameClientCoreImpl {
 	bool unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	bool lock(std::string_view tag);
 	bool lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	bool click(const std::optional<uint8_t> script_no);
+	bool click(std::optional<uint8_t> script_no);
 	bool click(std::string_view tag);
 	bool request_history();
 	bool is_session_active() const { return state.load() == state_t::active; }

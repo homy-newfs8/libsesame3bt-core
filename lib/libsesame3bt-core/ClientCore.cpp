@@ -128,7 +128,7 @@ SesameClientCore::lock(history_tag_type_t type, const std::array<std::byte, HIST
  * @return false
  */
 bool
-SesameClientCore::click(const std::optional<uint8_t> script_no) {
+SesameClientCore::click(std::optional<uint8_t> script_no) {
 	return impl->click(script_no);
 }
 

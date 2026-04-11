@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.17.1] 2026-04-11
+- Remove useless const modifier from click()
+- Debug output on ESP-IDF available.
+
 ## [v0.17.0] 2026-01-03
 - Add `set_auto_send_flags()` and `set_on_login_callback()`.
 - Restructure voltage handling functions.

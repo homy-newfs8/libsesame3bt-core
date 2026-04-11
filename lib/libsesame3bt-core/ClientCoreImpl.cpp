@@ -268,7 +268,7 @@ SesameClientCoreImpl::click(std::string_view tag) {
 }
 
 bool
-SesameClientCoreImpl::click(const std::optional<uint8_t> script_no) {
+SesameClientCoreImpl::click(std::optional<uint8_t> script_no) {
 	if (model != model_t::sesame_bot && model != model_t::sesame_bot_2) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;
