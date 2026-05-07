@@ -52,7 +52,7 @@ class SesameClientCoreImpl {
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const { return setting; }
 	void disconnect();
 	bool has_setting() const;
-	void request_status();
+	bool request_status();
 	bool is_key_set() const { return _is_key_set; }
 
  private:

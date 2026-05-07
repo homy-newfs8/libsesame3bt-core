@@ -254,7 +254,7 @@ SesameClientCore::get_setting() const {
  *
  * @note Not all models support this request (SESAME 5 / Bot 2 seems not respond)
  */
-void
+bool
 SesameClientCore::request_status() {
 	return impl->request_status();
 }

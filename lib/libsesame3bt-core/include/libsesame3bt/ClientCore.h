@@ -260,7 +260,7 @@ class SesameClientCore {
 	state_t get_state() const;
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const;
 	bool has_setting() const;
-	void request_status();
+	bool request_status();
 
 	void on_received(const std::byte*, size_t);
 	void on_disconnected();

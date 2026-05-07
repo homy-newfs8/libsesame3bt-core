@@ -336,9 +336,9 @@ SesameClientCoreImpl::has_setting() const {
 	}
 }
 
-void
+bool
 SesameClientCoreImpl::request_status() {
-	handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);
+	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);
 }
 
 void
