@@ -300,6 +300,7 @@ Status::battery_s(model_t model) {
 		case model_t::open_sensor_1:
 		case model_t::remote:
 		case model_t::remote_nano:
+		case model_t::open_sensor_2:
 			return 1;
 		default:
 			return 2;

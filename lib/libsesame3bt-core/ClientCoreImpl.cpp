@@ -318,18 +318,24 @@ SesameClientCoreImpl::on_disconnected() {
 bool
 SesameClientCoreImpl::has_setting() const {
 	switch (model) {
-		case model_t::open_sensor_1:  // may be
+		case model_t::open_sensor_1:
 		case model_t::sesame_touch:
-		case model_t::sesame_touch_pro:  // may be
+		case model_t::sesame_touch_pro:
 		case model_t::remote:
 		case model_t::remote_nano:
 		case model_t::sesame_bot_2:
 		case model_t::sesame_bike_2:
-		case model_t::sesame_face_pro:  // may be
+		case model_t::sesame_face_pro:
 		case model_t::sesame_face:
 		case model_t::sesame_face_pro_ai:
 		case model_t::sesame_face_ai:
-		case model_t::open_sensor_2:  // may be
+		case model_t::open_sensor_2:
+		case model_t::sesame_touch_2:
+		case model_t::sesame_touch_2_pro:
+		case model_t::sesame_face_2:
+		case model_t::sesame_face_2_pro:
+		case model_t::sesame_face_2_ai:
+		case model_t::sesame_face_2_pro_ai:
 			return false;
 		default:
 			return true;

@@ -45,19 +45,6 @@ class OS3Handler {
 	long long dec_count = 0;
 	bool setting_received = false;
 	bool status_received = false;
-
-	static constexpr int8_t voltage_scale(Sesame::model_t model) {
-		switch (model) {
-			case Sesame::model_t::open_sensor_1:
-			case Sesame::model_t::remote:
-			case Sesame::model_t::remote_nano:
-			case Sesame::model_t::sesame_bot_2:
-			case Sesame::model_t::sesame_bike_2:
-				return 2;
-			default:
-				return 1;
-		}
-	}
 };
 
 }  // namespace libsesame3bt::core
