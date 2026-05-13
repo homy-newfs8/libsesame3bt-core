@@ -234,7 +234,7 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 
 bool
 SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
-	DEBUG_PRINTLN("handle_cmd");
+	DEBUG_PRINTLN("handle cmd(%u)=%s", static_cast<uint8_t>(cmd), util::bin2hex(payload, size).c_str());
 	if (size == 0 || size < std::to_integer<size_t>(payload[0]) + 1) {
 		DEBUG_PRINTLN("Too short command, ignored");
 		return false;
@@ -242,6 +242,8 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 	std::optional<history_tag_type_t> trigger_type;
 	std::string tstr;
 	float scaled_voltage = NAN;
+	float scaled_voltage2 = NAN;
+	std::string_view extra;
 	if (std::to_integer<uint8_t>(payload[0]) > 0) {
 		tstr = std::string(reinterpret_cast<const char*>(payload + 1), std::to_integer<size_t>(payload[0]));
 	} else if (size >= 18) {
@@ -251,13 +253,20 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 			uint16_t voltage_raw = static_cast<uint8_t>(payload[19]) << 8 | static_cast<uint8_t>(payload[18]);
 			scaled_voltage = Status::status_value_to_scaled_voltage_os3(voltage_raw);
 		}
+		if (size >= 22) {
+			uint16_t voltage_raw2 = static_cast<uint8_t>(payload[21]) << 8 | static_cast<uint8_t>(payload[20]);
+			scaled_voltage2 = Status::status_value_to_scaled_voltage_os3(voltage_raw2);
+		}
+		if (size >= 23) {
+			extra = std::string_view(reinterpret_cast<const char*>(payload + 22), size - 22);
+		}
 	} else {
 		tstr = {};
 	}
 	DEBUG_PRINTLN("cmd=%s(%s)", cmd_string(cmd), tstr.c_str());
 	Sesame::response_os3_t res;
 	if (on_command_callback) {
-		res.result = on_command_callback(session.session_id, cmd, tstr, trigger_type, scaled_voltage);
+		res.result = on_command_callback(session.session_id, cmd, tstr, trigger_type, scaled_voltage, scaled_voltage2, extra);
 	} else {
 		res.result = Sesame::result_code_t::not_supported;
 	}

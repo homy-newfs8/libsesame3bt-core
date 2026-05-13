@@ -14,7 +14,9 @@ using command_callback_t = std::function<Sesame::result_code_t(uint16_t session_
                                                                Sesame::item_code_t cmd,
                                                                const std::string& tag,
                                                                std::optional<history_tag_type_t> trigger,
-                                                               float scaled_voltage)>;
+                                                               float scaled_voltage,
+                                                               float scaled_voltage2,
+                                                               std::string_view extra)>;
 using login_callback_t = std::function<void(uint16_t session_id)>;
 
 namespace auto_send {

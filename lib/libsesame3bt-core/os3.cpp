@@ -185,6 +185,13 @@ OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 			if (in_len >= sizeof(Sesame::response_history_5_t) + 20) {
 				uint16_t voltage_raw = static_cast<uint8_t>(tag_data[19]) << 8 | static_cast<uint8_t>(tag_data[18]);
 				history.scaled_voltage = Status::status_value_to_scaled_voltage_os3(voltage_raw);
+				if (in_len >= sizeof(Sesame::response_history_5_t) + 22) {
+					uint16_t voltage_raw2 = static_cast<uint8_t>(tag_data[21]) << 8 | static_cast<uint8_t>(tag_data[20]);
+					history.scaled_voltage2 = Status::status_value_to_scaled_voltage_os3(voltage_raw2);
+					if (in_len >= sizeof(Sesame::response_history_5_t) + 23) {
+						history.extra = std::string_view(tag_data + 22, in_len - sizeof(Sesame::response_history_5_t) - 22);
+					}
+				}
 			}
 		}
 	}

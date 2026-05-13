@@ -212,7 +212,9 @@ struct History {
 	time_t time;
 	uint8_t tag_len;
 	float scaled_voltage = NAN;
+	float scaled_voltage2 = NAN;
 	char tag[Sesame::MAX_HISTORY_TAG_SIZE + 1];
+	std::string_view extra;
 };
 
 enum class state_t : uint8_t { idle, authenticating, active };
