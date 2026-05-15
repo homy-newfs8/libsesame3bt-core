@@ -68,6 +68,7 @@ class Sesame {
 		sesame_bot_2 = 17,
 		sesame_face_pro = 18,
 		sesame_face = 19,
+		sesame_6 = 20,
 		sesame_6_pro = 21,
 		sesame_face_pro_ai = 22,
 		sesame_face_ai = 23,
