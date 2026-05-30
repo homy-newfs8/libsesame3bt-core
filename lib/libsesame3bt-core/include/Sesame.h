@@ -79,6 +79,7 @@ class Sesame {
 		sesame_face_2_pro = 28,
 		sesame_face_2_ai = 30,
 		sesame_face_2_pro_ai = 31,
+		sesame_bot_3 = 35,
 	};
 	enum class motor_status_t : uint8_t { idle = 0, locking, holding, unlocking };
 	enum class op_code_t : uint8_t {
