@@ -64,7 +64,8 @@ class CryptHandler {
  private:
 	std::variant<OS3IVHandler, OS2IVHandler> iv_handler;
 	const bool as_peripheral;
-	api_wrapper<mbedtls_ccm_context> ccm_ctx{mbedtls_ccm_init, mbedtls_ccm_free};
+	api_wrapper<mbedtls_ccm_context> ccm_en_ctx{mbedtls_ccm_init, mbedtls_ccm_free};
+	api_wrapper<mbedtls_ccm_context> ccm_de_ctx{mbedtls_ccm_init, mbedtls_ccm_free};
 	static constexpr std::array<std::byte, 1> auth_add_data{};
 	std::array<std::byte, 13> c2p_iv;
 	std::array<std::byte, 13> p2c_iv;

@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.18.1] 2026-06-30
+- Separate AES-CCM encryption and decryption contexts to improve stability.
+
 ## [v0.18.0] 2026-05-31
 - API Changes
   - Add `scaled_voltage2` and `extra` to `History` (Client).

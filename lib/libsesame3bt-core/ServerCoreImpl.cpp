@@ -80,7 +80,7 @@ bool
 SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, size_t size) {
 	auto* session = get_session(session_id);
 	if (session == nullptr) {
-		DEBUG_PRINTLN("session %u not found", session_id);
+		DEBUG_PRINTLN("Session %u not found", session_id);
 		return false;
 	}
 	using decode_result_t = SesameBLETransport::decode_result_t;
