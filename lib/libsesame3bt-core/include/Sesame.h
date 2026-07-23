@@ -165,7 +165,7 @@ class Sesame {
 
 	static os_ver_t get_os_ver(model_t model) {
 		int8_t v = static_cast<int8_t>(model);
-		if (v < 0 || v > static_cast<int8_t>(model_t::sesame_face_2_pro_ai)) {
+		if (v < 0 || v > static_cast<int8_t>(model_t::sesame_bot_3)) {
 			return os_ver_t::unknown;
 		} else if (v >= static_cast<int8_t>(model_t::sesame_3) && v <= static_cast<int8_t>(model_t::sesame_4)) {
 			return os_ver_t::os2;

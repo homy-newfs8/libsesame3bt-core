@@ -184,7 +184,7 @@ SesameClientCoreImpl::fire_history_callback(const History& history) {
 bool
 SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
-	if (model == model_t::sesame_bot_2) {
+	if (model == model_t::sesame_bot_2 || model == model_t::sesame_bot_3) {
 		tagchars[0] = 0;
 	} else {
 		auto truncated = util::truncate_utf8(tag, handler->get_max_history_tag_size());
@@ -269,7 +269,7 @@ SesameClientCoreImpl::click(std::string_view tag) {
 
 bool
 SesameClientCoreImpl::click(std::optional<uint8_t> script_no) {
-	if (model != model_t::sesame_bot && model != model_t::sesame_bot_2) {
+	if (model != model_t::sesame_bot && model != model_t::sesame_bot_2 && model != model_t::sesame_bot_3) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
 		return false;
 	}
@@ -336,6 +336,7 @@ SesameClientCoreImpl::has_setting() const {
 		case model_t::sesame_face_2_pro:
 		case model_t::sesame_face_2_ai:
 		case model_t::sesame_face_2_pro_ai:
+		case model_t::sesame_bot_3:
 			return false;
 		default:
 			return true;

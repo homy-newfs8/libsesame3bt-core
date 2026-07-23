@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.18.2] 2026-07-23
+- Fix `sesame_bot_3` os version determination.
+
 ## [v0.18.1] 2026-06-30
 - Separate AES-CCM encryption and decryption contexts to improve stability.
 
