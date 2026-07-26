@@ -9,7 +9,7 @@ idf_component_register(SRCS
 	"lib/libsesame3bt-core/os2_iv.cpp"
 	"lib/libsesame3bt-core/os2.cpp"
 	"lib/libsesame3bt-core/os3_iv.cpp"
-	"lib/libsesame3bt-core/os2.cpp"
+	"lib/libsesame3bt-core/os3.cpp"
 	"lib/libsesame3bt-core/scanner.cpp"
 	"lib/libsesame3bt-core/ServerCore.cpp"
 	"lib/libsesame3bt-core/ServerCoreImpl.cpp"
