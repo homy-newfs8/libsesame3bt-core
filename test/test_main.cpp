@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <unity.h>
 #include "SesameClient.h"
+#include "../lib/libsesame3bt-core/bot_status_layout.h"
 #include "util.h"
 #if __has_include("mysesame-config.h")
 #include "mysesame-config.h"
@@ -25,6 +26,19 @@
 namespace util = libsesame3bt::util;
 using libsesame3bt::Sesame;
 using libsesame3bt::SesameClient;
+using libsesame3bt::core::uses_compact_bot_status_layout;
+
+void
+test_bot_status_layout_selection() {
+	const auto compact_size = sizeof(Sesame::mecha_bot_2_status_t);
+	TEST_ASSERT_TRUE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_2, compact_size));
+	TEST_ASSERT_FALSE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_2, compact_size - 1));
+	TEST_ASSERT_FALSE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_2, compact_size + 1));
+	TEST_ASSERT_TRUE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_3, compact_size));
+	TEST_ASSERT_TRUE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_3, compact_size + 1));
+	TEST_ASSERT_FALSE(uses_compact_bot_status_layout(Sesame::model_t::sesame_bot_3, compact_size - 1));
+	TEST_ASSERT_FALSE(uses_compact_bot_status_layout(Sesame::model_t::sesame_5, compact_size));
+}
 
 void
 test_truncate_utf8() {
@@ -153,6 +167,7 @@ setup() {
 	delay(3000);
 	UNITY_BEGIN();
 #if TEST_UTILITY
+	RUN_TEST(test_bot_status_layout_selection);
 	RUN_TEST(test_truncate_utf8);
 	RUN_TEST(test_cleanup_tail_utf8);
 	RUN_TEST(test_vol_pct);
