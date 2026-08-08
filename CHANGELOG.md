@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.18.3] 2026-08-08
+- Fix SESAME Bot2/3, Bike2 incorrect status handling.
+
 ## [v0.18.2] 2026-07-23
 - Fix `sesame_bot_3` os version determination.
 

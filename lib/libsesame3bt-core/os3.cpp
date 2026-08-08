@@ -120,11 +120,13 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 void
 OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	DEBUG_PRINTLN("status: %s", util::bin2hex(in, in_len).c_str());
+
+	// old version of bot2 and bike2 uses dedicated short packet
 	if ((client->model == Sesame::model_t::sesame_bot_2 || client->model == Sesame::model_t::sesame_bot_3) &&
-	    in_len >= sizeof(Sesame::mecha_bot_2_status_t)) {
+	    in_len == sizeof(Sesame::mecha_bot_2_status_t)) {
 		const auto* msg = reinterpret_cast<const Sesame::mecha_bot_2_status_t*>(in);
 		client->sesame_status = {*msg, client->model};
-	} else if (client->model == Sesame::model_t::sesame_bike_2 && in_len >= sizeof(Sesame::mecha_bike_2_status_t)) {
+	} else if (client->model == Sesame::model_t::sesame_bike_2 && in_len == sizeof(Sesame::mecha_bike_2_status_t)) {
 		const auto* msg = reinterpret_cast<const Sesame::mecha_bike_2_status_t*>(in);
 		client->sesame_status = {*msg, client->model};
 	} else {
