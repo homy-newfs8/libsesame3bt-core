@@ -1,6 +1,8 @@
 #pragma once
 #include <cstddef>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -62,6 +64,7 @@ class SesameServerCoreImpl {
 
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting) { mecha_setting = setting; }
 	void set_mecha_status(const Sesame::mecha_status_5_t& status) { mecha_status = status; }
+	void set_version_tag(std::string_view tag) { version_tag.assign(tag); }
 	void set_auto_send_flags(auto_send::flags flags) { auto_send_flags = flags; }
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
@@ -83,11 +86,13 @@ class SesameServerCoreImpl {
 	uint32_t auth_timeout = DEFAULT_AUTH_TIMEOUT_MSEC;
 	Sesame::mecha_setting_5_t mecha_setting{-100, 100, 0};
 	Sesame::mecha_status_5_t mecha_status{6 * 500, -32768, 0, false, true, false, false, true, false, false};
+	std::string version_tag;
 	auto_send::flags auto_send_flags =
 	    static_cast<auto_send::flags>(auto_send::flags::mecha_setting | auto_send::flags::mecha_status);
 
 	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
 	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);
+	bool handle_version_tag(ServerSession& session);
 	bool handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
 	bool prepare_session_key(ServerSession& session);
 	ServerSession* create_session(uint16_t session_id);
