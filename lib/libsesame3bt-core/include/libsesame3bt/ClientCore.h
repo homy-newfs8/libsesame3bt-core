@@ -241,17 +241,17 @@ class SesameClientCore {
 	SesameClientCore(const SesameClientCore&) = delete;
 	SesameClientCore& operator=(const SesameClientCore&) = delete;
 	virtual ~SesameClientCore();
-	bool begin(Sesame::model_t model);
-	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
-	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
-	bool set_keys(std::string_view pk_str, std::string_view secret_str);
-	bool unlock(std::string_view tag);
-	bool unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	bool lock(std::string_view tag);
-	bool lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	bool click(std::optional<uint8_t> script_no = std::nullopt);
-	bool click(std::string_view tag);
-	bool request_history();
+	result_t begin(Sesame::model_t model);
+	result_t set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
+	                  const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
+	result_t set_keys(std::string_view pk_str, std::string_view secret_str);
+	result_t unlock(std::string_view tag);
+	result_t unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
+	result_t lock(std::string_view tag);
+	result_t lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
+	result_t click(std::optional<uint8_t> script_no = std::nullopt);
+	result_t click(std::string_view tag);
+	result_t request_history();
 	bool is_session_active() const;
 	bool is_key_set() const;
 	void set_status_callback(status_callback_t callback);
@@ -262,9 +262,9 @@ class SesameClientCore {
 	state_t get_state() const;
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const;
 	bool has_setting() const;
-	bool request_status();
+	result_t request_status();
 
-	void on_received(const std::byte*, size_t);
+	result_t on_received(const std::byte*, size_t);
 	void on_disconnected();
 
  private:

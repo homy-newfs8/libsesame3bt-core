@@ -36,69 +36,70 @@ using util::to_ptr;
 SesameServerCoreImpl::SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions)
     : core(core), ble_backend(backend), vsessions(max_sessions) {}
 
-bool
+result_t
 SesameServerCoreImpl::begin(Sesame::model_t model, const uint8_t (&uuid)[16]) {
 	this->model = model;
 	std::copy(std::cbegin(uuid), std::cend(uuid), std::begin(this->uuid));
 
-	return ecc.generate_keypair();
+	return ecc.generate_keypair() ? result_t::success : result_t::crypt_failure;
 }
 
-bool
+result_t
 SesameServerCoreImpl::send_initial(ServerSession& session) {
 	Sesame::publish_initial_t msg;
 	std::copy(std::cbegin(session.nonce), std::cend(session.nonce), msg.token);
-	if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::initial,
-	                                   reinterpret_cast<const std::byte*>(&msg), sizeof(msg), false, session.crypt)) {
+	if (auto rc = session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::initial,
+	                                            reinterpret_cast<const std::byte*>(&msg), sizeof(msg), false, session.crypt);
+	    rc != result_t::success) {
 		DEBUG_PRINTLN("Failed to publish initial");
-		return false;
+		return rc;
 	}
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 SesameServerCoreImpl::on_subscribed(uint16_t session_id) {
 	auto* session = create_session(session_id);
 	if (!session) {
-		return false;
+		return result_t::invalid_state;
 	}
 	Random::get_random(session->nonce);
-	if (!send_initial(*session)) {
-		return false;
+	if (auto rc = send_initial(*session); rc != result_t::success) {
+		return rc;
 	}
 	if (is_registered()) {
-		if (!prepare_session_key(*session)) {
-			return false;
+		if (auto rc = prepare_session_key(*session); rc != result_t::success) {
+			return rc;
 		}
 	}
 	session->set_state(session_state_t::waiting_login);
 
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, size_t size) {
 	auto* session = get_session(session_id);
 	if (session == nullptr) {
 		DEBUG_PRINTLN("Session %u not found", session_id);
-		return false;
+		return result_t::invalid_state;
 	}
 	using decode_result_t = SesameBLETransport::decode_result_t;
 	DEBUG_PRINTLN("received %u", size);
 	auto drc = session->transport.decode(data, size, session->crypt);
 	if (drc != decode_result_t::received) {
-		return true;
+		return result_t::success;
 	}
 	data = session->transport.data();
 	size = session->transport.data_size();
 
 	if (size < 1) {
 		DEBUG_PRINTLN("Too short command ignored");
-		return true;
+		return result_t::invalid_packet;
 	}
 	using item_code_t = Sesame::item_code_t;
 	auto code = static_cast<item_code_t>(data[0]);
-	bool rc;
+	result_t rc;
 	switch (code) {
 		case item_code_t::registration:
 			rc = handle_registration(*session, data + 1, size - 1);
@@ -114,7 +115,7 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 			break;
 		default:
 			DEBUG_PRINTLN("Unhandled command %u %s", static_cast<uint8_t>(code), util::bin2hex(data + 1, size - 1).c_str());
-			rc = true;
+			rc = result_t::success;
 			break;
 	}
 	return rc;
@@ -152,35 +153,36 @@ SesameServerCoreImpl::on_disconnected(uint16_t session_id) {
 	DEBUG_PRINTLN("Session %u not found (on_disconnected)", session_id);
 }
 
-bool
+result_t
 SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byte* payload, size_t size) {
 	if (size != sizeof(Sesame::os3_cmd_registration_t)) {
 		DEBUG_PRINTLN("%u: registration packet length mismatch, ignored", size);
-		return false;
+		return result_t::invalid_packet;
 	}
 	if (is_registered()) {
 		DEBUG_PRINTLN("Already registered, registration ignored");
-		return false;
+		return result_t::success;
 	}
 	if (!on_registration_callback) {
 		DEBUG_PRINTLN("Registration callback not set, abort registration");
-		return false;
+		return result_t::invalid_state;
 	}
 	auto* cmd = reinterpret_cast<const Sesame::os3_cmd_registration_t*>(payload);
 	if (!ecc.derive_secret(cmd->public_key, secret)) {
-		return false;
+		return result_t::crypt_failure;
 	}
-	if (!prepare_session_key(session)) {
-		return false;
+	if (auto rc = prepare_session_key(session); rc != result_t::success) {
+		return rc;
 	}
 	Sesame::response_registration_5_t resp{Sesame::result_code_t::success, mecha_status, mecha_setting, {}};
 	if (!ecc.export_pk(resp.public_key)) {
-		return false;
+		return result_t::crypt_failure;
 	}
-	if (!session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp), sizeof(resp),
-	                                   false, session.crypt)) {
+	if (auto rc = session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::registration, to_bytes(&resp),
+	                                            sizeof(resp), false, session.crypt);
+	    rc != result_t::success) {
 		DEBUG_PRINTLN("Failed to send registration notification, registration aborted");
-		return false;
+		return rc;
 	}
 	registered = true;
 	session.set_state(session_state_t::running);
@@ -188,56 +190,59 @@ SesameServerCoreImpl::handle_registration(ServerSession& session, const std::byt
 		on_registration_callback(session.session_id, secret);
 	}
 
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle_login");
 	if (size != sizeof(Sesame::os3_cmd_login_t)) {
 		DEBUG_PRINTLN("login payload length mismatch");
-		return false;
+		return result_t::invalid_packet;
 	}
 	if (!session.crypt.is_key_shared()) {
 		DEBUG_PRINTLN("login invalid state");
-		return false;
+		return result_t::invalid_state;
 	}
 	if (!session.crypt.verify_auth_code(payload)) {
 		DEBUG_PRINTLN("authentication failed");
-		return false;
+		return result_t::auth_failure;
 	}
 	Sesame::response_login_5_t resp{};
-	if (!session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::login, to_bytes(&resp), sizeof(resp), true,
-	                                   session.crypt)) {
+	if (auto rc = session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::login, to_bytes(&resp),
+	                                            sizeof(resp), true, session.crypt);
+	    rc != result_t::success) {
 		DEBUG_PRINTLN("Failed to send login response");
-		return false;
+		return rc;
 	}
 	session.set_state(session_state_t::running);
 	if (auto_send_flags & auto_send::flags::mecha_status) {
-		if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status, to_bytes(&mecha_status),
-		                                   sizeof(mecha_status), true, session.crypt)) {
-			DEBUG_PRINTLN("Failed to send mecha status");
+		if (auto rc = session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_status,
+		                                            to_bytes(&mecha_status), sizeof(mecha_status), true, session.crypt);
+		    rc != result_t::success) {
+			DEBUG_PRINTLN("Failed to send mecha status");  // XXX
 		}
 	}
 	if (auto_send_flags & auto_send::flags::mecha_setting) {
-		if (!session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting, to_bytes(&mecha_setting),
-		                                   sizeof(mecha_setting), true, session.crypt)) {
-			DEBUG_PRINTLN("Failed to send mecha setting");
+		if (auto rc = session.transport.send_notify(Sesame::op_code_t::publish, Sesame::item_code_t::mech_setting,
+		                                            to_bytes(&mecha_setting), sizeof(mecha_setting), true, session.crypt);
+		    rc != result_t::success) {
+			DEBUG_PRINTLN("Failed to send mecha setting");  // XXX
 		}
 	}
 	if (on_login_callback) {
 		on_login_callback(session.session_id);
 	}
 
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size) {
 	DEBUG_PRINTLN("handle cmd(%u)=%s", static_cast<uint8_t>(cmd), util::bin2hex(payload, size).c_str());
 	if (size == 0 || size < std::to_integer<size_t>(payload[0]) + 1) {
 		DEBUG_PRINTLN("Too short command, ignored");
-		return false;
+		return result_t::invalid_state;
 	}
 	std::optional<history_tag_type_t> trigger_type;
 	std::string tstr;
@@ -270,12 +275,13 @@ SesameServerCoreImpl::handle_cmd_with_tag(ServerSession& session, Sesame::item_c
 	} else {
 		res.result = Sesame::result_code_t::not_supported;
 	}
-	if (!session.transport.send_notify(Sesame::op_code_t::response, cmd, to_bytes(&res), sizeof(res), true, session.crypt)) {
+	if (auto rc = session.transport.send_notify(Sesame::op_code_t::response, cmd, to_bytes(&res), sizeof(res), true, session.crypt);
+	    rc != result_t::success) {
 		DEBUG_PRINTLN("Failed to send response to cmd");
-		return false;
+		return rc;
 	}
 
-	return true;
+	return result_t::success;
 }
 
 void
@@ -287,25 +293,24 @@ ServerSession::set_state(session_state_t state) {
 	last_state_changed = millis();
 }
 
-bool
+void
 SesameServerCoreImpl::set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& new_secret) {
 	std::copy(std::cbegin(new_secret), std::cend(new_secret), std::begin(secret));
 	registered = true;
-	return true;
 }
 
-bool
+result_t
 SesameServerCoreImpl::prepare_session_key(ServerSession& session) {
 	CmacAes128 cmac;
 	std::array<std::byte, Sesame::SECRET_SIZE> session_key;
 	if (!cmac.set_key(secret) || !cmac.update(session.nonce) || !cmac.finish(session_key)) {
 		DEBUG_PRINTLN("Failed to generate session key");
-		return false;
+		return result_t::crypt_failure;
 	}
 	if (!session.crypt.set_session_key(session_key.data(), session_key.size(), {}, session.nonce)) {
-		return false;
+		return result_t::crypt_failure;
 	}
-	return true;
+	return result_t::success;
 }
 
 size_t
@@ -365,28 +370,50 @@ SesameServerCoreImpl::create_advertisement_data_os3() const {
 	return std::make_tuple(manu, name);
 }
 
-void
-SesameServerCoreImpl::update() {
-	for (auto& [id, session] : vsessions) {
+std::tuple<std::optional<uint16_t>, result_t>
+SesameServerCoreImpl::update(SesameServerCore::update_handle_t& h) {
+	using update_handle_t = SesameServerCore::update_handle_t;
+	int16_t idx = static_cast<int16_t>(h);
+	if (idx < 0 || idx >= std::size(vsessions)) {
+		idx = 0;
+	}
+	for (size_t i = idx; i < std::size(vsessions); i++) {
+		auto& [id, session] = vsessions[i];
 		if (id.has_value()) {
-			auto now = millis();
-			switch (session->state) {
-				case session_state_t::idle:
-				case session_state_t::running:
-					break;
-				case session_state_t::waiting_login:
-					if (auto elapsed = now - session->last_state_changed; elapsed > auth_timeout) {
-						DEBUG_PRINTLN("Session %u login timeout", *id);
-						session->disconnect();
-						session->set_state(session_state_t::idle);
-					}
-					break;
+			auto result = update_one(*session);
+			h = static_cast<update_handle_t>((idx + 1) % std::size(vsessions));
+			return {*id, result};
+		}
+	}
+	if (idx > 0) {
+		for (size_t i = 0; i < idx; i++) {
+			auto& [id, session] = vsessions[i];
+			if (id.has_value()) {
+				auto result = update_one(*session);
+				h = static_cast<update_handle_t>((idx + 1) % std::size(vsessions));
+				return {*id, result};
 			}
 		}
 	}
+	h = static_cast<update_handle_t>(0);
+	return {{}, result_t::success};
 }
 
-bool
+result_t
+SesameServerCoreImpl::update_one(ServerSession& session) {
+	if (session.state == session_state_t::waiting_login) {
+		auto now = millis();
+		if (auto elapsed = now - session.last_state_changed; elapsed > auth_timeout) {
+			DEBUG_PRINTLN("Session %u login timeout", session.session_id);
+			session.set_state(session_state_t::idle);
+			return result_t::auth_failure;
+		}
+	}
+
+	return result_t::success;
+}
+
+result_t
 SesameServerCoreImpl::send_notify(std::optional<uint16_t> session_id,
                                   Sesame::op_code_t op_code,
                                   Sesame::item_code_t item_code,
@@ -396,20 +423,21 @@ SesameServerCoreImpl::send_notify(std::optional<uint16_t> session_id,
 		auto* session = get_session(*session_id);
 		if (!session) {
 			DEBUG_PRINTLN("%u: Sessinon not exists", *session_id);
-			return false;
+			return result_t::invalid_state;
 		}
 		return session->transport.send_notify(op_code, item_code, data, size, true, session->crypt);
 	} else {
-		bool rc = true;
+		result_t res = result_t::success;
 		for (auto& p : vsessions) {
 			if (p.first) {
-				if (!p.second->transport.send_notify(op_code, item_code, data, size, true, p.second->crypt)) {
+				if (auto rc = p.second->transport.send_notify(op_code, item_code, data, size, true, p.second->crypt);
+				    rc != result_t::success) {
 					DEBUG_PRINTLN("%u: Failed to send notify", *p.first);
-					rc = false;
+					res = rc;
 				}
 			}
 		}
-		return rc;
+		return res;
 	}
 }
 

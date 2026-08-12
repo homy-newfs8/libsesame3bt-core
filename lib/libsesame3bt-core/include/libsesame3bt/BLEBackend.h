@@ -4,6 +4,17 @@
 
 namespace libsesame3bt::core {
 
+enum class result_t : uint8_t {
+	success,
+	invalid_state,
+	invalid_packet,
+	crypt_failure,
+	transport_failure,
+	auth_failure,
+	operation_unsupported,
+	invalid_argument
+};
+
 /**
  * @brief BLE communication backend interface
  *
@@ -19,17 +30,11 @@ class SesameBLEBackend {
 	 * @return false Failure
 	 */
 	virtual bool write_to_tx(const uint8_t* data, size_t size) = 0;
-	/**
-	 * @brief Disconnect BLE connection
-	 *
-	 */
-	virtual void disconnect() = 0;
 };
 
 class ServerBLEBackend {
  public:
 	virtual bool write_to_central(uint16_t session_id, const uint8_t* data, size_t size) = 0;
-	virtual void disconnect(uint16_t session_id) = 0;
 };
 
 }  // namespace libsesame3bt::core

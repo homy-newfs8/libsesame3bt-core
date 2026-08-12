@@ -16,7 +16,7 @@ SesameClientCore::~SesameClientCore() {}
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::begin(Sesame::model_t model) {
 	return impl->begin(model);
 }
@@ -30,7 +30,7 @@ SesameClientCore::begin(Sesame::model_t model) {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                            const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	return impl->set_keys(public_key, secret_key);
@@ -45,7 +45,7 @@ SesameClientCore::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	return impl->set_keys(pk_str, secret_str);
 }
@@ -56,9 +56,9 @@ SesameClientCore::set_keys(std::string_view pk_str, std::string_view secret_str)
  * @param data
  * @param size
  */
-void
+result_t
 SesameClientCore::on_received(const std::byte* data, size_t size) {
-	impl->on_received(data, size);
+	return impl->on_received(data, size);
 }
 
 /**
@@ -77,7 +77,7 @@ SesameClientCore::on_disconnected() {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::unlock(std::string_view tag) {
 	return impl->unlock(tag);
 }
@@ -90,7 +90,7 @@ SesameClientCore::unlock(std::string_view tag) {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
 	return impl->unlock(type, uuid);
 }
@@ -102,7 +102,7 @@ SesameClientCore::unlock(history_tag_type_t type, const std::array<std::byte, HI
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::lock(std::string_view tag) {
 	return impl->lock(tag);
 }
@@ -115,7 +115,7 @@ SesameClientCore::lock(std::string_view tag) {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
 	return impl->lock(type, uuid);
 }
@@ -127,7 +127,7 @@ SesameClientCore::lock(history_tag_type_t type, const std::array<std::byte, HIST
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::click(std::optional<uint8_t> script_no) {
 	return impl->click(script_no);
 }
@@ -139,7 +139,7 @@ SesameClientCore::click(std::optional<uint8_t> script_no) {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::click(std::string_view tag) {
 	return impl->click(tag);
 }
@@ -150,7 +150,7 @@ SesameClientCore::click(std::string_view tag) {
  * @return true
  * @return false
  */
-bool
+result_t
 SesameClientCore::request_history() {
 	return impl->request_history();
 }
@@ -254,7 +254,7 @@ SesameClientCore::get_setting() const {
  *
  * @note Not all models support this request (SESAME 5 / Bot 2 seems not respond)
  */
-bool
+result_t
 SesameClientCore::request_status() {
 	return impl->request_status();
 }

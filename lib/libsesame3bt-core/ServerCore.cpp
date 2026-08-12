@@ -34,22 +34,22 @@ SesameServerCore::SesameServerCore(ServerBLEBackend& backend, int max_sessions)
 
 SesameServerCore::~SesameServerCore() {}
 
-bool
+result_t
 SesameServerCore::begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]) {
 	return impl->begin(model, uuid);
 }
 
-void
-SesameServerCore::update() {
-	impl->update();
+std::tuple<std::optional<uint16_t>, result_t>
+SesameServerCore::update(update_handle_t& h) {
+	return impl->update(h);
 }
 
-bool
+result_t
 SesameServerCore::on_subscribed(uint16_t session_id) {
 	return impl->on_subscribed(session_id);
 }
 
-bool
+result_t
 SesameServerCore::on_received(uint16_t session_id, const std::byte* data, size_t size) {
 	return impl->on_received(session_id, data, size);
 }
@@ -116,12 +116,12 @@ SesameServerCore::is_registered() const {
 	return impl->is_registered();
 }
 
-bool
+void
 SesameServerCore::set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret) {
 	return impl->set_registered(secret);
 }
 
-bool
+result_t
 libsesame3bt::core::SesameServerCore::send_notify(std::optional<uint16_t> session_id,
                                                   Sesame::op_code_t op_code,
                                                   Sesame::item_code_t item_code,

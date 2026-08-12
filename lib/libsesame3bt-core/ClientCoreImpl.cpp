@@ -26,16 +26,7 @@ SesameClientCoreImpl::SesameClientCoreImpl(SesameBLEBackend& backend, SesameClie
 
 SesameClientCoreImpl::~SesameClientCoreImpl() {}
 
-void
-SesameClientCoreImpl::disconnect() {
-	transport.disconnect();
-	if (crypt) {
-		crypt->reset_session_key();
-	}
-	update_state(state_t::idle);
-}
-
-bool
+result_t
 SesameClientCoreImpl::begin(model_t model) {
 	this->model = model;
 
@@ -51,30 +42,30 @@ SesameClientCoreImpl::begin(model_t model) {
 			break;
 		default:
 			DEBUG_PRINTF("%u: model not supported\n", static_cast<uint8_t>(model));
-			return false;
+			return result_t::operation_unsupported;
 	}
-	if (!handler->init()) {
+	if (auto rc = handler->init(); rc != result_t::success) {
 		handler.reset();
-		return false;
+		return rc;
 	}
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 SesameClientCoreImpl::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
-		return false;
+		return result_t::invalid_state;
 	}
 	return handler->set_keys(pk_str, secret_str);
 }
 
-bool
+result_t
 SesameClientCoreImpl::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                                const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
-		return false;
+		return result_t::invalid_state;
 	}
 	return handler->set_keys(public_key, secret_key);
 }
@@ -89,24 +80,24 @@ SesameClientCoreImpl::update_state(state_t new_state) {
 	}
 }
 
-void
+result_t
 SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 	if (!handler) {
 		DEBUG_PRINTLN("begin() not finished");
-		return;
+		return result_t::invalid_state;
 	}
 	if (!is_key_set()) {
 		DEBUG_PRINTLN("Keys are not set");
-		return;
+		return result_t::invalid_state;
 	}
 	auto rc = transport.decode(p, len, *crypt);
 	if (rc != SesameBLETransport::decode_result_t::received) {
-		return;
+		return rc == SesameBLETransport::decode_result_t::require_more ? result_t::success : result_t::crypt_failure;  // XXX
 	}
 	auto recv_size = transport.data_size();
 	if (recv_size < sizeof(Sesame::message_header_t)) {
 		DEBUG_PRINTLN("too short message dropped");
-		return;
+		return result_t::invalid_packet;
 	}
 	auto* msg = reinterpret_cast<const Sesame::message_header_t*>(transport.data());
 	auto* body = transport.data() + sizeof(Sesame::message_header_t);
@@ -114,61 +105,55 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 		case Sesame::op_code_t::publish:
 			switch (msg->item_code) {
 				case Sesame::item_code_t::initial:
-					handle_publish_initial();
-					break;
+					return handle_publish_initial();
 				case Sesame::item_code_t::mech_setting:
-					handler->handle_publish_mecha_setting(body, recv_size - sizeof(Sesame::message_header_t));
-					break;
+					return handler->handle_publish_mecha_setting(body, recv_size - sizeof(Sesame::message_header_t));
 				case Sesame::item_code_t::mech_status:
-					handler->handle_publish_mecha_status(body, recv_size - sizeof(Sesame::message_header_t));
-					break;
+					return handler->handle_publish_mecha_status(body, recv_size - sizeof(Sesame::message_header_t));
 				case Sesame::item_code_t::pub_ssm_key:
-					handle_publish_pub_key_sesame(body, recv_size - sizeof(Sesame::message_header_t));
-					break;
+					return handle_publish_pub_key_sesame(body, recv_size - sizeof(Sesame::message_header_t));
 				default:
 					DEBUG_PRINTLN("%u: Unsupported item on publish: %s", static_cast<uint8_t>(msg->item_code),
 					              util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
-					break;
+					return result_t::success;
 			}
 			break;
 		case Sesame::op_code_t::response:
 			switch (msg->item_code) {
 				case Sesame::item_code_t::login:
-					handler->handle_response_login(transport.data() + sizeof(Sesame::message_header_t),
-					                               transport.data_size() - sizeof(Sesame::message_header_t));
-					break;
+					return handler->handle_response_login(transport.data() + sizeof(Sesame::message_header_t),
+					                                      transport.data_size() - sizeof(Sesame::message_header_t));
 				case Sesame::item_code_t::mech_status:
-					handler->handle_response_mecha_status(body, recv_size - sizeof(Sesame::message_header_t));
-					break;
+					return handler->handle_response_mecha_status(body, recv_size - sizeof(Sesame::message_header_t));
 				case Sesame::item_code_t::history:
 					if (history_callback) {
-						handler->handle_history(body, recv_size - sizeof(Sesame::message_header_t));
+						return handler->handle_history(body, recv_size - sizeof(Sesame::message_header_t));
+					} else {
+						return result_t::success;
 					}
-					break;
 				default:
-					DEBUG_PRINTLN("%u: Unsupported item on response: %s", static_cast<uint8_t>(msg->item_code),
+					DEBUG_PRINTLN("%u: Unhandled item on response: %s", static_cast<uint8_t>(msg->item_code),
 					              util::bin2hex(transport.data() + 1, transport.data_size() - 1).c_str());
-					break;
+					return result_t::success;
 			}
 			break;
 		default:
-			DEBUG_PRINTLN("%u: Unexpected op code", static_cast<uint8_t>(msg->op_code));
-			break;
+			DEBUG_PRINTLN("%u: Unhandled op code", static_cast<uint8_t>(msg->op_code));
+			return result_t::success;
 	}
 }
 
-void
+result_t
 SesameClientCoreImpl::handle_publish_initial() {
 	if (get_state() == state_t::authenticating) {
 		DEBUG_PRINTLN("skipped repeating initial");
-		return;
+		return result_t::success;
 	}
-	handler->handle_publish_initial(transport.data() + sizeof(Sesame::message_header_t),
-	                                transport.data_size() - sizeof(Sesame::message_header_t));
-	return;
+	return handler->handle_publish_initial(transport.data() + sizeof(Sesame::message_header_t),
+	                                       transport.data_size() - sizeof(Sesame::message_header_t));
 }
 
-bool
+result_t
 SesameClientCoreImpl::request_history() {
 	std::byte flag{0};
 	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::history, &flag, sizeof(flag), true);
@@ -181,7 +166,7 @@ SesameClientCoreImpl::fire_history_callback(const History& history) {
 	}
 }
 
-bool
+result_t
 SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag) {
 	std::array<char, 1 + Handler::MAX_HISTORY_TAG_SIZE> tagchars{};
 	if (model == model_t::sesame_bot_2 || model == model_t::sesame_bot_3) {
@@ -196,7 +181,7 @@ SesameClientCoreImpl::send_cmd_with_tag(Sesame::item_code_t code, std::string_vi
 	                             handler->get_cmd_tag_size(std::to_integer<size_t>(tagbytes[0])), true);
 }
 
-bool
+result_t
 SesameClientCoreImpl::send_cmd_with_uuid_tag(Sesame::item_code_t code,
                                              history_tag_type_t type,
                                              const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
@@ -206,76 +191,76 @@ SesameClientCoreImpl::send_cmd_with_uuid_tag(Sesame::item_code_t code,
 	return handler->send_command(Sesame::op_code_t::async, code, tagbytes.data(), sizeof(tagbytes), true);
 }
 
-bool
+result_t
 SesameClientCoreImpl::unlock(std::string_view tag) {
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	return send_cmd_with_tag(Sesame::item_code_t::unlock, tag);
 }
 
-bool
+result_t
 SesameClientCoreImpl::unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
 	if (Sesame::get_os_ver(model) != Sesame::os_ver_t::os3) {
 		DEBUG_PRINTLN("UUID tag is not supported on OS2 devices");
-		return false;
+		return result_t::operation_unsupported;
 	}
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	return send_cmd_with_uuid_tag(Sesame::item_code_t::unlock, type, uuid);
 }
 
-bool
+result_t
 SesameClientCoreImpl::lock(std::string_view tag) {
 	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
 		DEBUG_PRINTLN("SESAME Bike do not support locking");
-		return false;
+		return result_t::operation_unsupported;
 	}
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	return send_cmd_with_tag(Sesame::item_code_t::lock, tag);
 }
 
-bool
+result_t
 SesameClientCoreImpl::lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid) {
 	if (model == model_t::sesame_bike || model == model_t::sesame_bike_2) {
 		DEBUG_PRINTLN("SESAME Bike do not support locking");
-		return false;
+		return result_t::operation_unsupported;
 	}
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	return send_cmd_with_uuid_tag(Sesame::item_code_t::lock, type, uuid);
 }
 
-bool
+result_t
 SesameClientCoreImpl::click(std::string_view tag) {
 	if (model != model_t::sesame_bot) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
-		return false;
+		return result_t::operation_unsupported;
 	}
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	return send_cmd_with_tag(Sesame::item_code_t::click, tag);
 }
 
-bool
+result_t
 SesameClientCoreImpl::click(std::optional<uint8_t> script_no) {
 	if (model != model_t::sesame_bot && model != model_t::sesame_bot_2 && model != model_t::sesame_bot_3) {
 		DEBUG_PRINTLN("click is supported only on SESAME bot");
-		return false;
+		return result_t::operation_unsupported;
 	}
 	if (!is_session_active()) {
 		DEBUG_PRINTLN("Cannot operate while session is not active");
-		return false;
+		return result_t::invalid_state;
 	}
 	if (model == model_t::sesame_bot) {
 		if (script_no == 0) {
@@ -309,10 +294,7 @@ SesameClientCoreImpl::on_disconnected() {
 	if (crypt) {
 		crypt->reset_session_key();
 	}
-	if (state.load() != state_t::idle) {
-		DEBUG_PRINTLN("Bluetooth disconnected by peer");
-		update_state(state_t::idle);
-	}
+	update_state(state_t::idle);
 }
 
 bool
@@ -343,15 +325,15 @@ SesameClientCoreImpl::has_setting() const {
 	}
 }
 
-bool
+result_t
 SesameClientCoreImpl::request_status() {
 	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);
 }
 
-void
+result_t
 SesameClientCoreImpl::handle_publish_pub_key_sesame(const std::byte* in, size_t in_size) {
 	if (!registered_devices_callback) {
-		return;
+		return result_t::success;
 	}
 	int ndevices = in_size / REGISTERED_DEVICE_DATA_SIZE;
 	auto regs = std::vector<RegisteredDevice>();
@@ -383,6 +365,8 @@ SesameClientCoreImpl::handle_publish_pub_key_sesame(const std::byte* in, size_t 
 		}
 	}
 	registered_devices_callback(core, regs);
+
+	return result_t::success;
 }
 
 }  // namespace libsesame3bt::core

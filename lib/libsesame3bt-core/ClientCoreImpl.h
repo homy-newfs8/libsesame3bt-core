@@ -29,19 +29,19 @@ class SesameClientCoreImpl {
 	SesameClientCoreImpl(const SesameClientCoreImpl&) = delete;
 	SesameClientCoreImpl& operator=(const SesameClientCoreImpl&) = delete;
 	virtual ~SesameClientCoreImpl();
-	bool begin(Sesame::model_t model);
-	bool set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
-	              const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
-	bool set_keys(std::string_view pk_str, std::string_view secret_str);
-	void on_received(const std::byte*, size_t);
+	result_t begin(Sesame::model_t model);
+	result_t set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
+	                  const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key);
+	result_t set_keys(std::string_view pk_str, std::string_view secret_str);
+	result_t on_received(const std::byte*, size_t);
 	void on_disconnected();
-	bool unlock(std::string_view tag);
-	bool unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	bool lock(std::string_view tag);
-	bool lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	bool click(std::optional<uint8_t> script_no);
-	bool click(std::string_view tag);
-	bool request_history();
+	result_t unlock(std::string_view tag);
+	result_t unlock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
+	result_t lock(std::string_view tag);
+	result_t lock(history_tag_type_t type, const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
+	result_t click(std::optional<uint8_t> script_no);
+	result_t click(std::string_view tag);
+	result_t request_history();
 	bool is_session_active() const { return state.load() == state_t::active; }
 	void set_status_callback(status_callback_t callback) { lock_status_callback = callback; }
 	void set_state_callback(state_callback_t callback) { state_callback = callback; }
@@ -50,9 +50,8 @@ class SesameClientCoreImpl {
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
 	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const { return setting; }
-	void disconnect();
 	bool has_setting() const;
-	bool request_status();
+	result_t request_status();
 	bool is_key_set() const { return _is_key_set; }
 
  private:
@@ -75,15 +74,15 @@ class SesameClientCoreImpl {
 
 	SesameClientCore& core;
 
-	void handle_publish_initial();
+	result_t handle_publish_initial();
 	void fire_status_callback();
 	void update_state(state_t new_state);
 	void fire_history_callback(const History& history);
-	bool send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
-	bool send_cmd_with_uuid_tag(Sesame::item_code_t code,
-	                            history_tag_type_t type,
-	                            const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
-	void handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
+	result_t send_cmd_with_tag(Sesame::item_code_t code, std::string_view tag);
+	result_t send_cmd_with_uuid_tag(Sesame::item_code_t code,
+	                                history_tag_type_t type,
+	                                const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
+	result_t handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
 };
 
 }  // namespace libsesame3bt::core

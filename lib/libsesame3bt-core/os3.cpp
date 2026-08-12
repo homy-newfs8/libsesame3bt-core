@@ -14,26 +14,26 @@ using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
-bool
+result_t
 OS3Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	if (!util::hex2bin(secret_str, sesame_secret)) {
 		DEBUG_PRINTLN("secret_str invalid format");
-		return false;
+		return result_t::invalid_argument;
 	}
 	client->_is_key_set = true;
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 OS3Handler::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                      const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	std::copy(std::cbegin(secret_key), std::cend(secret_key), std::begin(sesame_secret));
 	client->_is_key_set = true;
 
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 OS3Handler::send_command(Sesame::op_code_t op_code,
                          Sesame::item_code_t item_code,
                          const std::byte* data,
@@ -46,53 +46,49 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 		plain[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[1]);
 		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
-			return false;
+			return result_t::crypt_failure;
 		}
 	} else {
 		pkt[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &pkt[1]);
 	}
 
-	return transport.send_data(pkt, pkt_size, is_crypted);
+	return transport.send_data(pkt, pkt_size, is_crypted) ? result_t::success : result_t::transport_failure;
 }
 
-void
+result_t
 OS3Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_initial_t)) {
 		DEBUG_PRINTLN("%u: short response initial data", in_len);
-		client->disconnect();
-		return;
+		return result_t::invalid_packet;
 	}
 	const auto* msg = reinterpret_cast<const Sesame::publish_initial_t*>(in);
 	CmacAes128 cmac;
 	std::array<std::byte, 16> session_key;
 	if (!cmac.set_key(sesame_secret) || !cmac.update(msg->token) || !cmac.finish(session_key)) {
-		client->disconnect();
-		return;
+		return result_t::crypt_failure;
 	}
 	if (!crypt.set_session_key(session_key.data(), session_key.size(), {}, msg->token)) {
-		client->disconnect();
-		return;
+		return result_t::crypt_failure;
 	}
-	if (send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false)) {
-		client->update_state(state_t::authenticating);
-	} else {
-		client->disconnect();
+	if (auto rc = send_command(Sesame::op_code_t::async, Sesame::item_code_t::login, session_key.data(), 4, false);
+	    rc != result_t::success) {
+		return rc;
 	}
+	client->update_state(state_t::authenticating);
+	return result_t::success;
 }
 
-void
+result_t
 OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::response_login_5_t)) {
 		DEBUG_PRINTLN("short response login message");
-		client->disconnect();
-		return;
+		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::response_login_5_t*>(in);
 	if (msg->result != Sesame::result_code_t::success) {
 		DEBUG_PRINTLN("%u: login response was not success", static_cast<uint8_t>(msg->result));
-		client->disconnect();
-		return;
+		return result_t::auth_failure;
 	}
 	time_t t = msg->timestamp;
 	struct tm tm;
@@ -101,13 +97,15 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	              tm.tm_sec);
 	setting_received = !client->has_setting();  // treat as setting received
 	status_received = false;
+
+	return result_t::success;
 }
 
-void
+result_t
 OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_setting_5_t)) {
 		DEBUG_PRINTLN("%u: Unexpected size of mecha setting, ignored", in_len);
-		return;
+		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
 	client->setting.emplace<LockSetting>(msg->setting);
@@ -115,9 +113,11 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	if (client->state != state_t::active && setting_received && status_received) {
 		client->update_state(state_t::active);
 	}
+
+	return result_t::success;
 }
 
-void
+result_t
 OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	DEBUG_PRINTLN("status: %s", util::bin2hex(in, in_len).c_str());
 
@@ -132,7 +132,7 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	} else {
 		if (in_len < sizeof(Sesame::publish_mecha_status_5_t)) {
 			DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored", in_len);
-			return;
+			return result_t::invalid_packet;
 		}
 		const auto* msg = reinterpret_cast<const Sesame::publish_mecha_status_5_t*>(in);
 		client->sesame_status = {msg->status, client->model};
@@ -142,20 +142,22 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	if (client->state != state_t::active && setting_received && status_received) {
 		client->update_state(state_t::active);
 	}
+
+	return result_t::success;
 }
 
-void
+result_t
 OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 	History history{};
 	if (in_len < 1) {
 		DEBUG_PRINTLN("%u: Unexpected size of history response, ignored", in_len);
-		return;
+		return result_t::invalid_packet;
 	}
 	history.result = static_cast<Sesame::result_code_t>(in[0]);
 	if (history.result != Sesame::result_code_t::success || in_len < sizeof(Sesame::response_history_5_t)) {
 		DEBUG_PRINTLN("%u: Empty history", static_cast<uint8_t>(history.result));
 		client->fire_history_callback(history);
-		return;
+		return result_t::success;
 	}
 	const auto* hist = reinterpret_cast<const Sesame::response_history_5_t*>(in);
 	history.time = hist->timestamp;
@@ -200,6 +202,8 @@ OS3Handler::handle_history(const std::byte* in, size_t in_len) {
 	}
 	history.type = histtype;
 	client->fire_history_callback(history);
+
+	return result_t::success;
 }
 
 }  // namespace libsesame3bt::core

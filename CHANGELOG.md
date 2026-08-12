@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.50.0] 2026-08-XX
+- Major change
+  - Many function now returns `result_t` instead of `bool`
+	- BLEBackend's `disconnect()` removed. libsesame3bt-core library do not call disconnect by itself.
+	- The transport-specific library (ex. libsesame3bt) needs to manage the connection by checking the `result_t` value.
+
 ## [v0.18.3] 2026-08-08
 - Fix SESAME Bot2/3, Bike2 incorrect status handling.
 

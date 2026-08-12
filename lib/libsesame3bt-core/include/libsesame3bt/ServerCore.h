@@ -3,6 +3,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 #include "BLEBackend.h"
 #include "Sesame.h"
 
@@ -29,26 +30,27 @@ enum flags : uint8_t {
 
 class SesameServerCore {
  public:
+	using update_handle_t = int16_t;
 	SesameServerCore(ServerBLEBackend& backend, int max_sessions);
 	SesameServerCore(const SesameServerCore&) = delete;
 	SesameServerCore& operator=(const SesameServerCore&) = delete;
 	virtual ~SesameServerCore();
 
-	bool begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
-	void update();
+	result_t begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
+	std::tuple<std::optional<uint16_t>, core::result_t> update(update_handle_t&);
 
-	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
-	bool on_subscribed(uint16_t session_id);
-	bool on_received(uint16_t session_id, const std::byte*, size_t);
+	void set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
+	result_t on_subscribed(uint16_t session_id);
+	result_t on_received(uint16_t session_id, const std::byte*, size_t);
 	void on_disconnected(uint16_t session_id);
 	bool is_registered() const;
 	bool has_session(uint16_t session_id) const;
 	size_t get_session_count() const;
-	bool send_notify(std::optional<uint16_t> session_id,
-	                 Sesame::op_code_t op_code,
-	                 Sesame::item_code_t item_code,
-	                 const std::byte* data,
-	                 size_t size);
+	result_t send_notify(std::optional<uint16_t> session_id,
+	                     Sesame::op_code_t op_code,
+	                     Sesame::item_code_t item_code,
+	                     const std::byte* data,
+	                     size_t size);
 
 	void set_on_registration_callback(registration_callback_t callback);
 	void set_on_command_callback(command_callback_t callback);
