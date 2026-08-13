@@ -84,11 +84,13 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 		DEBUG_PRINTLN("Session %u not found", session_id);
 		return result_t::invalid_state;
 	}
-	using decode_result_t = SesameBLETransport::decode_result_t;
 	DEBUG_PRINTLN("received %u", size);
 	auto drc = session->transport.decode(data, size, session->crypt);
-	if (drc != decode_result_t::received) {
+	if (!drc.has_value()) {
 		return result_t::success;
+	}
+	if (drc != result_t::success) {
+		return *drc;
 	}
 	data = session->transport.data();
 	size = session->transport.data_size();

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <optional>
 #include "crypt.h"
 #include "libsesame3bt/BLEBackend.h"
 
@@ -24,18 +25,17 @@ class SesameBLEBuffer {
 	SesameBLEBuffer() { reset(); }
 	void reset() {
 		recv_size = 0;
-		skipping = false;
+		prev_result.reset();
 	}
 
  private:
 	std::array<std::byte, MAX_RECV> recv_buffer{};
 	size_t recv_size;
-	bool skipping;
+	std::optional<result_t> prev_result;
 };
 
 class SesameBLETransport {
  public:
-	enum class decode_result_t { skipping, received, require_more, dropped };
 	SesameBLETransport(SesameBLEBackend& backend) : backend(backend) {}
 	SesameBLETransport(const SesameBLETransport&) = delete;
 	SesameBLETransport& operator=(const SesameBLETransport&) = delete;
@@ -46,8 +46,7 @@ class SesameBLETransport {
 	                     size_t data_size,
 	                     bool is_crypted,
 	                     CryptHandler& crypt);
-	decode_result_t decode(const std::byte* data, size_t size, CryptHandler& crypt);
-	// void disconnect();
+	std::optional<result_t> decode(const std::byte* data, size_t size, CryptHandler& crypt);
 	void reset();
 	const std::byte* data() { return buffer.recv_buffer.data(); }
 	size_t data_size() { return buffer.recv_size; }

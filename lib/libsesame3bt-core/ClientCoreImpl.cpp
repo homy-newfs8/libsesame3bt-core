@@ -91,9 +91,13 @@ SesameClientCoreImpl::on_received(const std::byte* p, size_t len) {
 		return result_t::invalid_state;
 	}
 	auto rc = transport.decode(p, len, *crypt);
-	if (rc != SesameBLETransport::decode_result_t::received) {
-		return rc == SesameBLETransport::decode_result_t::require_more ? result_t::success : result_t::crypt_failure;  // XXX
+	if (!rc.has_value()) {
+		return result_t::success;
 	}
+	if (rc != result_t::success) {
+		return *rc;
+	}
+
 	auto recv_size = transport.data_size();
 	if (recv_size < sizeof(Sesame::message_header_t)) {
 		DEBUG_PRINTLN("too short message dropped");

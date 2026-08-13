@@ -45,8 +45,8 @@ OS3Handler::send_command(Sesame::op_code_t op_code,
 		std::byte plain[1 + data_size];
 		plain[0] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[1]);
-		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
-			return result_t::crypt_failure;
+		if (auto rc = crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt)); rc != result_t::success) {
+			return rc;
 		}
 	} else {
 		pkt[0] = to_byte(item_code);
