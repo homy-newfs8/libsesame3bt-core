@@ -45,8 +45,6 @@ class OS3Handler {
 	std::array<std::byte, Sesame::SECRET_SIZE> sesame_secret{};
 	long long enc_count = 0;
 	long long dec_count = 0;
-	bool setting_received = false;
-	bool status_received = false;
 };
 
 }  // namespace libsesame3bt::core

@@ -72,9 +72,13 @@ SesameClientCoreImpl::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& pub
 
 void
 SesameClientCoreImpl::update_state(state_t new_state) {
-	if (state.exchange(new_state) == new_state) {
+	if (state == new_state) {
 		return;
 	}
+	state = new_state;
+	// if (state.exchange(new_state) == new_state) {
+	// 	return;
+	// }
 	if (state_callback) {
 		state_callback(core, new_state);
 	}
@@ -371,6 +375,13 @@ SesameClientCoreImpl::handle_publish_pub_key_sesame(const std::byte* in, size_t 
 	registered_devices_callback(core, regs);
 
 	return result_t::success;
+}
+
+void
+SesameClientCoreImpl::setting_received(const std::variant<LockSetting, BotSetting>& setting) {
+	if (setting_callback) {
+		setting_callback(core, setting);
+	}
 }
 
 }  // namespace libsesame3bt::core

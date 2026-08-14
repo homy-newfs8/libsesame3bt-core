@@ -95,8 +95,6 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	gmtime_r(&t, &tm);
 	DEBUG_PRINTLN("time=%04d/%02d/%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
 	              tm.tm_sec);
-	setting_received = !client->has_setting();  // treat as setting received
-	status_received = false;
 
 	return result_t::success;
 }
@@ -108,11 +106,8 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
-	client->setting.emplace<LockSetting>(msg->setting);
-	setting_received = true;
-	if (client->state != state_t::active && setting_received && status_received) {
-		client->update_state(state_t::active);
-	}
+	client->setting_received(LockSetting{msg->setting});
+	client->update_state(state_t::active);
 
 	return result_t::success;
 }
@@ -138,10 +133,6 @@ OS3Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 		client->sesame_status = {msg->status, client->model};
 	}
 	client->fire_status_callback();
-	status_received = true;
-	if (client->state != state_t::active && setting_received && status_received) {
-		client->update_state(state_t::active);
-	}
 
 	return result_t::success;
 }

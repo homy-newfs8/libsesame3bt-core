@@ -47,9 +47,9 @@ class SesameClientCoreImpl {
 	void set_state_callback(state_callback_t callback) { state_callback = callback; }
 	void set_history_callback(history_callback_t callback) { history_callback = callback; }
 	void set_registered_devices_callback(registered_devices_callback_t callback) { registered_devices_callback = callback; }
+	void set_setting_callback(setting_callback_t callback) { setting_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
-	const std::variant<std::nullptr_t, LockSetting, BotSetting>& get_setting() const { return setting; }
 	bool has_setting() const;
 	result_t request_status();
 	bool is_key_set() const { return _is_key_set; }
@@ -59,12 +59,12 @@ class SesameClientCoreImpl {
 	friend class OS3Handler;
 
 	std::atomic<state_t> state{state_t::idle};
-	std::variant<std::nullptr_t, LockSetting, BotSetting> setting;
 	Status sesame_status;
 	status_callback_t lock_status_callback{};
 	state_callback_t state_callback{};
 	history_callback_t history_callback{};
 	registered_devices_callback_t registered_devices_callback{};
+	setting_callback_t setting_callback{};
 	Sesame::model_t model;
 	SesameBLETransport transport;
 	std::optional<CryptHandler> crypt;
@@ -83,6 +83,7 @@ class SesameClientCoreImpl {
 	                                history_tag_type_t type,
 	                                const std::array<std::byte, HISTORY_TAG_UUID_SIZE>& uuid);
 	result_t handle_publish_pub_key_sesame(const std::byte* in, size_t in_size);
+	void setting_received(const std::variant<LockSetting, BotSetting>& setting);
 };
 
 }  // namespace libsesame3bt::core

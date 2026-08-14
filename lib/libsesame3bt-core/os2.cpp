@@ -109,14 +109,15 @@ OS2Handler::handle_response_login(const std::byte* in, size_t in_len) {
 		DEBUG_PRINTF("%u: login response was not success\n", static_cast<uint8_t>(msg->result));
 		return result_t::auth_failure;
 	}
-	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<BotSetting>(msg->mecha_setting);
-	} else {
-		client->setting.emplace<LockSetting>(msg->mecha_setting);
-	}
 	update_sesame_status(msg->mecha_status);
 	client->update_state(state_t::active);
 	client->fire_status_callback();
+
+	if (client->model == Sesame::model_t::sesame_bot) {
+		client->setting_received(BotSetting{msg->mecha_setting});
+	} else {
+		client->setting_received(LockSetting{msg->mecha_setting});
+	}
 
 	return result_t::success;
 }
@@ -184,9 +185,9 @@ OS2Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_t*>(in);
 	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<BotSetting>(msg->setting);
+		client->setting_received(BotSetting{msg->setting});
 	} else {
-		client->setting.emplace<LockSetting>(msg->setting);
+		client->setting_received(LockSetting{msg->setting});
 	}
 
 	return result_t::success;

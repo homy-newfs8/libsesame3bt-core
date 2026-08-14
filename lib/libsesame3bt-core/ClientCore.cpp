@@ -238,15 +238,13 @@ SesameClientCore::get_state() const {
 }
 
 /**
- * @brief Get SESAME setting.
- * Settings are notified from SESAME only once when connected.
- * @note This method is valid when state is `state_t::active`
+ * @brief Set setting callback
  *
- * @return const std::variant<nullptr_t, LockSetting, BotSetting>&
+ * @param callback
  */
-const std::variant<std::nullptr_t, LockSetting, BotSetting>&
-SesameClientCore::get_setting() const {
-	return impl->get_setting();
+void
+SesameClientCore::set_setting_callback(setting_callback_t callback) {
+	impl->set_setting_callback(callback);
 }
 
 /**
