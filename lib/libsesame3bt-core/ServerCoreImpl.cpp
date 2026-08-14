@@ -242,19 +242,29 @@ SesameServerCoreImpl::handle_version_tag(ServerSession& session) {
 		return true;
 	}
 
+	if (version_tag.size() != 12) {
+		DEBUG_PRINTLN("version_tag must be exactly 12 bytes");
+		return false;
+	}
+
 	// OS3 versionTag response payload:
 	//   byte 0 : result_code
-	//   byte 1..: UTF-8 version tag string
-	std::vector<std::byte> response;
-	response.reserve(1 + version_tag.size());
-	response.push_back(static_cast<std::byte>(Sesame::result_code_t::success));
-	std::transform(version_tag.begin(), version_tag.end(), std::back_inserter(response),
+	//   byte 1..12: version tag
+	std::array<std::byte, 13> response{};
+	response[0] = static_cast<std::byte>(Sesame::result_code_t::success);
+
+	std::transform(version_tag.begin(), version_tag.end(), response.begin() + 1,
 	               [](char c) { return static_cast<std::byte>(static_cast<uint8_t>(c)); });
 
 	DEBUG_PRINTLN("handle version_tag: %s", version_tag.c_str());
 
-	return session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::version_tag, response.data(),
-	                                     response.size(), true, session.crypt);
+	return session.transport.send_notify(
+	    Sesame::op_code_t::response,
+	    Sesame::item_code_t::version_tag,
+	    response.data(),
+	    response.size(),
+	    true,
+	    session.crypt);
 }
 
 bool
