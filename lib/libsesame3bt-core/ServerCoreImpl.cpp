@@ -258,13 +258,8 @@ SesameServerCoreImpl::handle_version_tag(ServerSession& session) {
 
 	DEBUG_PRINTLN("handle version_tag: %s", version_tag.c_str());
 
-	return session.transport.send_notify(
-	    Sesame::op_code_t::response,
-	    Sesame::item_code_t::version_tag,
-	    response.data(),
-	    response.size(),
-	    true,
-	    session.crypt);
+	return session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::version_tag, response.data(),
+	                                     response.size(), true, session.crypt);
 }
 
 bool
