@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.19.0] 2026-08-15
+- Add version_tag request handling on ServerCore
+
 ## [v0.18.3] 2026-08-08
 - Fix SESAME Bot2/3, Bike2 incorrect status handling.
 
