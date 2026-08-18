@@ -6,6 +6,9 @@
 	- BLEBackend's `disconnect()` removed. libsesame3bt-core library do not call disconnect by itself.
 	- The transport-specific library (ex. libsesame3bt) needs to manage the connection by checking the `result_t` value.
 
+## [v0.19.0] 2026-08-15
+- Add version_tag request handling on ServerCore
+
 ## [v0.18.3] 2026-08-08
 - Fix SESAME Bot2/3, Bike2 incorrect status handling.
 

@@ -109,6 +109,9 @@ SesameServerCoreImpl::on_received(uint16_t session_id, const std::byte* data, si
 		case item_code_t::login:
 			rc = handle_login(*session, data + 1, size - 1);
 			break;
+		case item_code_t::version_tag:
+			rc = handle_version_tag(*session);
+			break;
 		case item_code_t::lock:
 		case item_code_t::unlock:
 		case item_code_t::door_open:
@@ -237,6 +240,33 @@ SesameServerCoreImpl::handle_login(ServerSession& session, const std::byte* payl
 	}
 
 	return result_t::success;
+}
+
+result_t
+SesameServerCoreImpl::handle_version_tag(ServerSession& session) {
+	if (version_tag.empty()) {
+		DEBUG_PRINTLN("version_tag is not configured, ignoring request");
+		return result_t::success;
+	}
+
+	if (version_tag.size() != 12) {
+		DEBUG_PRINTLN("version_tag must be exactly 12 bytes");
+		return result_t::invalid_argument;
+	}
+
+	// OS3 versionTag response payload:
+	//   byte 0 : result_code
+	//   byte 1..12: version tag
+	std::array<std::byte, 13> response{};
+	response[0] = static_cast<std::byte>(Sesame::result_code_t::success);
+
+	std::transform(version_tag.begin(), version_tag.end(), response.begin() + 1,
+	               [](char c) { return static_cast<std::byte>(static_cast<uint8_t>(c)); });
+
+	DEBUG_PRINTLN("handle version_tag: %s", version_tag.c_str());
+
+	return session.transport.send_notify(Sesame::op_code_t::response, Sesame::item_code_t::version_tag, response.data(),
+	                                     response.size(), true, session.crypt);
 }
 
 result_t

@@ -93,6 +93,14 @@ SesameServerCore::set_mecha_status(const Sesame::mecha_status_5_t& status) {
 	impl->set_mecha_status(status);
 }
 
+/// @brief Set version tag returned to clients.
+/// @note An empty tag disables the version_tag response.
+/// @param tag SESAME-compatible version tag, e.g. "3.0-5-09ca44".
+void
+SesameServerCore::set_version_tag(std::string_view tag) {
+	impl->set_version_tag(tag);
+}
+
 /// @brief Set auto-send flags
 /// @note If the specified flags are set, the corresponding data are automatically sent to the client after login. Default is (mecha_status | mecha_setting).
 /// @param flags

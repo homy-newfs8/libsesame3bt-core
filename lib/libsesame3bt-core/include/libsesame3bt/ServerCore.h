@@ -3,7 +3,8 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include <utility>
+#include <string_view>
+#include <tuple>
 #include "BLEBackend.h"
 #include "Sesame.h"
 
@@ -57,6 +58,7 @@ class SesameServerCore {
 	void set_on_login_callback(login_callback_t callback);
 	void set_mecha_setting(const Sesame::mecha_setting_5_t& setting);
 	void set_mecha_status(const Sesame::mecha_status_5_t& status);
+	void set_version_tag(std::string_view tag);
 	void set_auto_send_flags(auto_send::flags flags);
 
 	std::tuple<std::string, std::string> create_advertisement_data_os3() const;
