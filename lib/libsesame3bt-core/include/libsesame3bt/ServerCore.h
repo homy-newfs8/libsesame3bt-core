@@ -31,14 +31,13 @@ enum flags : uint8_t {
 
 class SesameServerCore {
  public:
-	using update_handle_t = int16_t;
 	SesameServerCore(ServerBLEBackend& backend, int max_sessions);
 	SesameServerCore(const SesameServerCore&) = delete;
 	SesameServerCore& operator=(const SesameServerCore&) = delete;
 	virtual ~SesameServerCore();
 
 	result_t begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
-	std::tuple<std::optional<uint16_t>, core::result_t> update(update_handle_t&);
+	std::tuple<std::optional<uint16_t>, core::result_t> update();
 
 	void set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	result_t on_subscribed(uint16_t session_id);

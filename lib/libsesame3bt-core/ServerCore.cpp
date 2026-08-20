@@ -40,8 +40,8 @@ SesameServerCore::begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uui
 }
 
 std::tuple<std::optional<uint16_t>, result_t>
-SesameServerCore::update(update_handle_t& h) {
-	return impl->update(h);
+SesameServerCore::update() {
+	return impl->update();
 }
 
 result_t

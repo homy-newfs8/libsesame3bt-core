@@ -2,9 +2,13 @@
 
 ## [v0.50.0] 2026-08-XX
 - Major change
-  - Many function now returns `result_t` instead of `bool`
+  - Many function now returns `result_t` instead of `bool`.
+	- The state changes to `state_t::active` as soon as authentication is complete. Previously, the state change was deferred until both the status and settings were received.
 	- BLEBackend's `disconnect()` removed. libsesame3bt-core library do not call disconnect by itself.
 	- The transport-specific library (ex. libsesame3bt) needs to manage the connection by checking the `result_t` value.
+	- Remove `SesameClientCore::get_setting()`. Use `set_setting_callback()` instead.
+	- Remove `SesameClientCore::has_setting()`.
+	- `SesameServerCore::update()` returns a pair of session ID and `result_t` for one session each time it is called.
 
 ## [v0.19.0] 2026-08-15
 - Add version_tag request handling on ServerCore

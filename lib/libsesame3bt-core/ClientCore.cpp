@@ -271,18 +271,6 @@ Status::voltage_to_pct(float voltage, std::optional<Sesame::model_t> model) {
 }
 
 /**
- * @brief return this model has setting
- * If this function returns false, get_setting() returns nullptr.
- *
- * @return true
- * @return false
- */
-bool
-SesameClientCore::has_setting() const {
-	return impl->has_setting();
-}
-
-/**
  * @brief number of series batterys
  *
  * @param model

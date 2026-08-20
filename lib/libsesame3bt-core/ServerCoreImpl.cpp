@@ -403,31 +403,29 @@ SesameServerCoreImpl::create_advertisement_data_os3() const {
 }
 
 std::tuple<std::optional<uint16_t>, result_t>
-SesameServerCoreImpl::update(SesameServerCore::update_handle_t& h) {
-	using update_handle_t = SesameServerCore::update_handle_t;
-	int16_t idx = static_cast<int16_t>(h);
-	if (idx < 0 || idx >= std::size(vsessions)) {
-		idx = 0;
+SesameServerCoreImpl::update() {
+	if (update_cursor >= std::size(vsessions)) {
+		update_cursor = 0;
 	}
-	for (size_t i = idx; i < std::size(vsessions); i++) {
+	for (size_t i = update_cursor; i < std::size(vsessions); i++) {
 		auto& [id, session] = vsessions[i];
 		if (id.has_value()) {
 			auto result = update_one(*session);
-			h = static_cast<update_handle_t>((idx + 1) % std::size(vsessions));
+			update_cursor = (update_cursor + 1) % std::size(vsessions);
 			return {*id, result};
 		}
 	}
-	if (idx > 0) {
-		for (size_t i = 0; i < idx; i++) {
+	if (update_cursor > 0) {
+		for (size_t i = 0; i < update_cursor; i++) {
 			auto& [id, session] = vsessions[i];
 			if (id.has_value()) {
 				auto result = update_one(*session);
-				h = static_cast<update_handle_t>((idx + 1) % std::size(vsessions));
+				update_cursor = (update_cursor + 1) % std::size(vsessions);
 				return {*id, result};
 			}
 		}
 	}
-	h = static_cast<update_handle_t>(0);
+	update_cursor = 0;
 	return {{}, result_t::success};
 }
 

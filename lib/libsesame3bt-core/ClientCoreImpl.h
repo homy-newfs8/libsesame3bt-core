@@ -50,7 +50,6 @@ class SesameClientCoreImpl {
 	void set_setting_callback(setting_callback_t callback) { setting_callback = callback; }
 	Sesame::model_t get_model() const { return model; }
 	state_t get_state() const { return state.load(); }
-	bool has_setting() const;
 	result_t request_status();
 	bool is_key_set() const { return _is_key_set; }
 

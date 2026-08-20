@@ -305,34 +305,6 @@ SesameClientCoreImpl::on_disconnected() {
 	update_state(state_t::idle);
 }
 
-bool
-SesameClientCoreImpl::has_setting() const {
-	switch (model) {
-		case model_t::open_sensor_1:
-		case model_t::sesame_touch:
-		case model_t::sesame_touch_pro:
-		case model_t::remote:
-		case model_t::remote_nano:
-		case model_t::sesame_bot_2:
-		case model_t::sesame_bike_2:
-		case model_t::sesame_face_pro:
-		case model_t::sesame_face:
-		case model_t::sesame_face_pro_ai:
-		case model_t::sesame_face_ai:
-		case model_t::open_sensor_2:
-		case model_t::sesame_touch_2:
-		case model_t::sesame_touch_2_pro:
-		case model_t::sesame_face_2:
-		case model_t::sesame_face_2_pro:
-		case model_t::sesame_face_2_ai:
-		case model_t::sesame_face_2_pro_ai:
-		case model_t::sesame_bot_3:
-			return false;
-		default:
-			return true;
-	}
-}
-
 result_t
 SesameClientCoreImpl::request_status() {
 	return handler->send_command(Sesame::op_code_t::read, Sesame::item_code_t::mech_status, nullptr, 0, true);

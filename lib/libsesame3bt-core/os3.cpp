@@ -90,11 +90,15 @@ OS3Handler::handle_response_login(const std::byte* in, size_t in_len) {
 		DEBUG_PRINTLN("%u: login response was not success", static_cast<uint8_t>(msg->result));
 		return result_t::auth_failure;
 	}
+#if LIBSESAME3BTCORE_DEBUG
 	time_t t = msg->timestamp;
 	struct tm tm;
 	gmtime_r(&t, &tm);
 	DEBUG_PRINTLN("time=%04d/%02d/%02d %02d:%02d:%02d", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min,
 	              tm.tm_sec);
+#endif
+
+	client->update_state(state_t::active);
 
 	return result_t::success;
 }
@@ -107,7 +111,6 @@ OS3Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_5_t*>(in);
 	client->setting_received(LockSetting{msg->setting});
-	client->update_state(state_t::active);
 
 	return result_t::success;
 }

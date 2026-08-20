@@ -41,7 +41,7 @@ class SesameServerCoreImpl {
  public:
 	SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions);
 	result_t begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
-	std::tuple<std::optional<uint16_t>, result_t> update(SesameServerCore::update_handle_t&);
+	std::tuple<std::optional<uint16_t>, result_t> update();
 	void set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool is_registered() const { return registered; }
 	size_t get_session_count() const;
@@ -88,6 +88,7 @@ class SesameServerCoreImpl {
 	std::string version_tag;
 	auto_send::flags auto_send_flags =
 	    static_cast<auto_send::flags>(auto_send::flags::mecha_setting | auto_send::flags::mecha_status);
+	uint16_t update_cursor{};
 
 	result_t handle_registration(ServerSession& session, const std::byte* payload, size_t size);
 	result_t handle_login(ServerSession& session, const std::byte* payload, size_t size);

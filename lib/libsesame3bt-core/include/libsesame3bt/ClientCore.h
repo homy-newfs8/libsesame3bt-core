@@ -262,7 +262,6 @@ class SesameClientCore {
 	void set_setting_callback(setting_callback_t callback);
 	Sesame::model_t get_model() const;
 	state_t get_state() const;
-	bool has_setting() const;
 	result_t request_status();
 
 	result_t on_received(const std::byte*, size_t);
