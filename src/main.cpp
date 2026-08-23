@@ -11,15 +11,15 @@
 using libsesame3bt::core::CmacAes128;
 using libsesame3bt::core::CryptHandler;
 using libsesame3bt::core::OS3IVHandler;
+using libsesame3bt::core::result_t;
 using libsesame3bt::core::SesameBLEBackend;
 using libsesame3bt::core::SesameBLETransport;
-using decode_result_t = SesameBLETransport::decode_result_t;
+
 namespace util = libsesame3bt::core::util;
 
 class StubBackend : public SesameBLEBackend {
  public:
 	virtual bool write_to_tx(const uint8_t* data, size_t size) override { return false; }
-	virtual void disconnect() override {}
 };
 
 StubBackend backend;
@@ -110,10 +110,10 @@ setup() {
 		if (util::hex2bin(line, buffer, len)) {
 			Serial.printf("decoding %u bytes\n", len);
 			auto rc = transport.decode(buffer.data(), len, as_peripheral ? cr_p : cr_c);
-			if (rc == decode_result_t::received) {
+			if (rc == result_t::success) {
 				Serial.printf("decoded(%u) ", transport.data_size());
 				Serial.println(util::bin2hex(transport.data(), transport.data_size()).c_str());
-			} else if (rc == decode_result_t::require_more) {
+			} else if (!rc.has_value()) {
 				Serial.print(">>");
 				prompt = false;
 				continue;

@@ -22,36 +22,34 @@ using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
-bool
+result_t
 OS2Handler::set_keys(std::string_view pk_str, std::string_view secret_str) {
 	std::array<std::byte, Sesame::SECRET_SIZE> secret;
 	if (!util::hex2bin(secret_str, secret)) {
 		DEBUG_PRINTLN("secret_str invalid format");
-		return false;
+		return result_t::invalid_argument;
 	}
 	std::array<std::byte, Sesame::PK_SIZE> pk;
 	if (!util::hex2bin(pk_str, pk)) {
 		DEBUG_PRINTLN("pk_str invalid format");
-		return false;
+		return result_t::invalid_argument;
 	}
 	return set_keys(pk, secret);
-
-	return false;
 }
 
-bool
+result_t
 OS2Handler::set_keys(const std::array<std::byte, Sesame::PK_SIZE>& public_key,
                      const std::array<std::byte, Sesame::SECRET_SIZE>& secret_key) {
 	if (!ecc.convert_binary_to_pk(public_key, sesame_pk)) {
-		return false;
+		return result_t::crypt_failure;
 	}
 	std::copy(std::cbegin(secret_key), std::cend(secret_key), std::begin(sesame_secret));
 	client->_is_key_set = true;
 
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 OS2Handler::send_command(Sesame::op_code_t op_code,
                          Sesame::item_code_t item_code,
                          const std::byte* data,
@@ -60,31 +58,27 @@ OS2Handler::send_command(Sesame::op_code_t op_code,
 	return transport.send_notify(op_code, item_code, data, data_size, is_crypted, crypt);
 }
 
-void
+result_t
 OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_initial_t)) {
 		DEBUG_PRINTF("%u: short response initial data\n", in_len);
-		client->disconnect();
-		return;
+		return result_t::invalid_packet;
 	}
 	crypt.reset_session_key();
 	auto msg = reinterpret_cast<const Sesame::publish_initial_t*>(in);
 
 	std::array<std::byte, Sesame::TOKEN_SIZE> local_tok;
 	if (!Random::get_random(local_tok)) {
-		client->disconnect();
-		return;
+		return result_t::crypt_failure;
 	}
 
 	std::array<std::byte, Sesame::PK_SIZE> bpk;
 	if (!generate_session_key(local_tok, msg->token, bpk)) {
-		client->disconnect();
-		return;
+		return result_t::crypt_failure;
 	}
 	std::array<std::byte, AES_BLOCK_SIZE> tag_response;
 	if (!generate_tag_response(bpk, local_tok, msg->token, tag_response)) {
-		client->disconnect();
-		return;
+		return result_t::crypt_failure;
 	}
 
 	constexpr size_t resp_size = sesame_ki.size() + Sesame::PK_SIZE + local_tok.size() + AUTH_TAG_TRUNCATED_SIZE;
@@ -95,48 +89,51 @@ OS2Handler::handle_publish_initial(const std::byte* in, size_t in_len) {
 	          std::copy(local_tok.cbegin(), local_tok.cend(),
 	                    std::copy(bpk.begin(), bpk.end(), std::copy(sesame_ki.cbegin(), sesame_ki.cend(), resp.begin()))));
 
-	if (send_command(Sesame::op_code_t::sync, Sesame::item_code_t::login, resp.data(), resp.size(), false)) {
-		client->update_state(state_t::authenticating);
-	} else {
-		client->disconnect();
+	if (auto rc = send_command(Sesame::op_code_t::sync, Sesame::item_code_t::login, resp.data(), resp.size(), false);
+	    rc != result_t::success) {
+		return rc;
 	}
+	client->update_state(state_t::authenticating);
+
+	return result_t::success;
 }
 
-void
+result_t
 OS2Handler::handle_response_login(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::response_login_t)) {
 		DEBUG_PRINTLN("short response login message");
-		client->disconnect();
-		return;
+		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::response_login_t*>(in);
 	if (msg->result != Sesame::result_code_t::success) {
 		DEBUG_PRINTF("%u: login response was not success\n", static_cast<uint8_t>(msg->result));
-		client->disconnect();
-		return;
-	}
-	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<BotSetting>(msg->mecha_setting);
-	} else {
-		client->setting.emplace<LockSetting>(msg->mecha_setting);
+		return result_t::auth_failure;
 	}
 	update_sesame_status(msg->mecha_status);
 	client->update_state(state_t::active);
 	client->fire_status_callback();
+
+	if (client->model == Sesame::model_t::sesame_bot) {
+		client->setting_received(BotSetting{msg->mecha_setting});
+	} else {
+		client->setting_received(LockSetting{msg->mecha_setting});
+	}
+
+	return result_t::success;
 }
 
-void
+result_t
 OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 	History history{};
 	if (in_len < 2) {
 		DEBUG_PRINTLN("%u: Unexpected size of history response, ignored", in_len);
-		return;
+		return result_t::invalid_packet;
 	}
 	history.result = static_cast<Sesame::result_code_t>(in[1]);
 	if (history.result != Sesame::result_code_t::success || in_len < sizeof(Sesame::response_history_t)) {
 		DEBUG_PRINTLN("%u: Empty history response", static_cast<uint8_t>(history.result));
 		client->fire_history_callback(history);
-		return;
+		return result_t::success;
 	}
 	const auto* hist = reinterpret_cast<const Sesame::response_history_t*>(in);
 	history.time = static_cast<time_t>(hist->timestamp / 1000);
@@ -167,6 +164,8 @@ OS2Handler::handle_history(const std::byte* in, size_t in_len) {
 	}
 	history.type = histtype;
 	client->fire_history_callback(history);
+
+	return result_t::success;
 }
 
 void
@@ -177,29 +176,34 @@ OS2Handler::update_sesame_status(const Sesame::mecha_status_t& mecha_status) {
 		client->sesame_status = {mecha_status.lock, client->model};
 	}
 }
-void
+
+result_t
 OS2Handler::handle_publish_mecha_setting(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_setting_t)) {
 		DEBUG_PRINTF("%u: Unexpected size of mecha setting, ignored\n", in_len);
-		return;
+		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_setting_t*>(in);
 	if (client->model == Sesame::model_t::sesame_bot) {
-		client->setting.emplace<BotSetting>(msg->setting);
+		client->setting_received(BotSetting{msg->setting});
 	} else {
-		client->setting.emplace<LockSetting>(msg->setting);
+		client->setting_received(LockSetting{msg->setting});
 	}
+
+	return result_t::success;
 }
 
-void
+result_t
 OS2Handler::handle_publish_mecha_status(const std::byte* in, size_t in_len) {
 	if (in_len < sizeof(Sesame::publish_mecha_status_t)) {
 		DEBUG_PRINTF("%u: Unexpected size of mecha status, ignored\n", in_len);
-		return;
+		return result_t::invalid_packet;
 	}
 	auto msg = reinterpret_cast<const Sesame::publish_mecha_status_t*>(in);
 	update_sesame_status(msg->status);
 	client->fire_status_callback();
+
+	return result_t::success;
 }
 
 bool

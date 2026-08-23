@@ -20,12 +20,12 @@ SesameBLETransport::send_data(const std::byte* pkt, size_t pkt_size, bool is_cry
 	std::array<std::byte, 1 + FRAGMENT_SIZE> fragment;  // 1 for header
 	int pos = 0;
 	for (size_t remain = pkt_size; remain > 0;) {
-		fragment[0] = packet_header_t{
-		    pos == 0,
-		    remain > FRAGMENT_SIZE ? packet_kind_t::not_finished
-		    : is_crypted           ? packet_kind_t::encrypted
-		                           : packet_kind_t::plain,
-		    std::byte{0}}.value;
+		fragment[0] = packet_header_t{pos == 0,
+		                              remain > FRAGMENT_SIZE ? packet_kind_t::not_finished
+		                              : is_crypted           ? packet_kind_t::encrypted
+		                                                     : packet_kind_t::plain,
+		                              std::byte{0}}
+		                  .value;
 		size_t ssz = std::min(remain, FRAGMENT_SIZE);
 		std::copy(pkt + pos, pkt + pos + ssz, &fragment[1]);
 		if (!backend.write_to_tx(to_cptr(fragment), ssz + 1)) {
@@ -38,61 +38,62 @@ SesameBLETransport::send_data(const std::byte* pkt, size_t pkt_size, bool is_cry
 	return true;
 }
 
-using decode_result_t = SesameBLETransport::decode_result_t;
-
-decode_result_t
+std::optional<result_t>
 SesameBLETransport::decode(const std::byte* p, size_t len, CryptHandler& crypt) {
 	if (len <= 1) {
-		return decode_result_t::dropped;
+		return result_t::invalid_packet;
 	}
 	packet_header_t h;
 	h.value = p[0];
 	if (h.is_start) {
-		buffer.skipping = false;
-		buffer.recv_size = 0;
+		buffer.reset();
 	}
-	if (buffer.skipping) {
+	if (buffer.prev_result.has_value() && buffer.prev_result != result_t::success) {
 		if (h.kind == packet_kind_t::encrypted) {
 			crypt.update_dec_iv();
 		}
-		return decode_result_t::skipping;
+		return buffer.prev_result;
 	}
 	if (buffer.recv_size + len - 1 > SesameBLEBuffer::MAX_RECV) {
 		DEBUG_PRINTLN("Received data too long, skipping");
-		buffer.skipping = true;
 		if (h.kind == packet_kind_t::encrypted) {
 			crypt.update_dec_iv();
 		}
-		return decode_result_t::skipping;
+		buffer.prev_result = result_t::invalid_packet;
+		return buffer.prev_result;
 	}
 	std::copy(p + 1, p + len, &buffer.recv_buffer[buffer.recv_size]);
 	buffer.recv_size += len - 1;
 	if (h.kind == packet_kind_t::not_finished) {
 		// wait next packet
-		return decode_result_t::require_more;
+		return {};
 	}
-	buffer.skipping = true;
 	if (h.kind == packet_kind_t::encrypted) {
-		if (buffer.recv_size < CryptHandler::CMAC_TAG_SIZE) {
-			DEBUG_PRINTLN("Encrypted message too short");
-			return decode_result_t::skipping;
-		}
 		if (!crypt.is_key_shared()) {
 			DEBUG_PRINTLN("Encrypted message received before key sharing");
-			return decode_result_t::skipping;
+			buffer.prev_result = result_t::invalid_state;
+		} else if (buffer.recv_size < CryptHandler::CMAC_TAG_SIZE) {
+			DEBUG_PRINTLN("Encrypted message too short");
+			buffer.prev_result = result_t::invalid_packet;
+		} else {
+			std::array<std::byte, SesameBLEBuffer::MAX_RECV - CryptHandler::CMAC_TAG_SIZE> decrypted{};
+			if (auto rc = crypt.decrypt(buffer.recv_buffer.data(), buffer.recv_size, &decrypted[0],
+			                            buffer.recv_size - CryptHandler::CMAC_TAG_SIZE);
+			    rc != result_t::success) {
+				buffer.prev_result = rc;
+			} else {
+				std::copy(decrypted.cbegin(), decrypted.cbegin() + buffer.recv_size - CryptHandler::CMAC_TAG_SIZE, &buffer.recv_buffer[0]);
+				buffer.recv_size -= CryptHandler::CMAC_TAG_SIZE;
+				buffer.prev_result = result_t::success;
+			}
 		}
-		std::array<std::byte, SesameBLEBuffer::MAX_RECV - CryptHandler::CMAC_TAG_SIZE> decrypted{};
-		if (!crypt.decrypt(buffer.recv_buffer.data(), buffer.recv_size, &decrypted[0],
-		                   buffer.recv_size - CryptHandler::CMAC_TAG_SIZE)) {
-			return decode_result_t::skipping;
-		}
-		std::copy(decrypted.cbegin(), decrypted.cbegin() + buffer.recv_size - CryptHandler::CMAC_TAG_SIZE, &buffer.recv_buffer[0]);
-		buffer.recv_size -= CryptHandler::CMAC_TAG_SIZE;
-	} else if (h.kind != packet_kind_t::plain) {
+	} else if (h.kind == packet_kind_t::plain) {
+		buffer.prev_result = result_t::success;
+	} else {
 		DEBUG_PRINTF("%u: Unexpected packet kind\n", static_cast<uint8_t>(h.kind));
-		return decode_result_t::skipping;
+		buffer.prev_result = result_t::invalid_packet;
 	}
-	return decode_result_t::received;
+	return buffer.prev_result;
 }
 
 void
@@ -100,13 +101,13 @@ SesameBLETransport::reset() {
 	buffer.reset();
 }
 
-void
-SesameBLETransport::disconnect() {
-	backend.disconnect();
-	reset();
-}
+// void
+// SesameBLETransport::disconnect() {
+// 	backend.disconnect();
+// 	reset();
+// }
 
-bool
+result_t
 SesameBLETransport::send_notify(Sesame::op_code_t op_code,
                                 Sesame::item_code_t item_code,
                                 const std::byte* data,
@@ -120,15 +121,15 @@ SesameBLETransport::send_notify(Sesame::op_code_t op_code,
 		plain[0] = to_byte(op_code);
 		plain[1] = to_byte(item_code);
 		std::copy(data, data + data_size, &plain[2]);
-		if (!crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt))) {
-			return false;
+		if (auto rc = crypt.encrypt(plain, sizeof(plain), pkt, sizeof(pkt)); rc != result_t::success) {
+			return rc;
 		}
 	} else {
 		pkt[0] = to_byte(op_code);
 		pkt[1] = to_byte(item_code);
 		std::copy(data, data + data_size, &pkt[2]);
 	}
-	return send_data(pkt, pkt_size, is_crypted);
+	return send_data(pkt, pkt_size, is_crypted) ? result_t::success : result_t::transport_failure;
 }
 
 }  // namespace libsesame3bt::core

@@ -1,5 +1,15 @@
 # Changelog
 
+## [v0.50.0] 2026-08-23
+- Major change
+	- Many functions now return `result_t` instead of `bool`.
+	- The state changes to `state_t::active` as soon as authentication is complete. Previously, the state change was deferred until both the status and settings were received.
+	- BLEBackend's `disconnect()` removed. libsesame3bt-core library do not call disconnect by itself.
+	- The transport-specific library (ex. libsesame3bt) needs to manage the connection by checking the state and `result_t` value.
+	- Remove `SesameClientCore::get_setting()`. Use `set_setting_callback()` instead.
+	- Remove `SesameClientCore::has_setting()`.
+	- `SesameServerCore::update()` returns a pair of session ID and `result_t` for one session each time it is called. Since `update()` primarily handles timeout-based session management, you should call it repeatedly to manage all sessions.
+
 ## [v0.19.0] 2026-08-15
 - Add version_tag request handling on ServerCore
 
@@ -14,9 +24,9 @@
 
 ## [v0.18.0] 2026-05-31
 - API Changes
-  - Add `scaled_voltage2` and `extra` to `History` (Client).
-  - Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
-  - Change return type of `request_status()` to `bool` (was `void`)
+	- Add `scaled_voltage2` and `extra` to `History` (Client).
+	- Add `scaled_voltage2` and `extra` to `command_callback_t` (Server).
+	- Change return type of `request_status()` to `bool` (was `void`)
 	- Add symbols to `model_t`: `open_sensor_2`, `sesame_touch_2`, `sesame_touch_2_pro`, `sesame_face_2`, `sesame_face_2_pro`, `sesame_face_2_ai`, `sesame_face_2_pro_ai`, `sesame_bot_3`
 
 ## [v0.17.1] 2026-04-11

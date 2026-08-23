@@ -6,6 +6,7 @@
 #include <variant>
 #include "Sesame.h"
 #include "api_wrapper.h"
+#include "libsesame3bt/BLEBackend.h"
 #include "os2_iv.h"
 #include "os3_iv.h"
 
@@ -52,8 +53,8 @@ class CryptHandler {
 		}
 	}
 	bool is_key_shared() const { return key_prepared; }
-	bool decrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
-	bool encrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
+	result_t decrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
+	result_t encrypt(const std::byte* in, size_t in_size, std::byte* out, size_t out_size);
 	bool set_session_key(const std::byte* key,
 	                     size_t key_size,
 	                     const std::array<std::byte, Sesame::TOKEN_SIZE>& local_nonce,

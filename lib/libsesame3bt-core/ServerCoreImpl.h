@@ -34,26 +34,25 @@ class ServerSession : SesameBLEBackend {
 	const uint16_t session_id;
 	SesameBLETransport transport;
 	virtual bool write_to_tx(const uint8_t* data, size_t size) override { return backend.write_to_central(session_id, data, size); };
-	virtual void disconnect() override { backend.disconnect(session_id); }
 	void set_state(session_state_t state);
 };
 
 class SesameServerCoreImpl {
  public:
 	SesameServerCoreImpl(ServerBLEBackend& backend, SesameServerCore& core, size_t max_sessions);
-	bool begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
-	void update();
-	bool set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
+	result_t begin(libsesame3bt::Sesame::model_t model, const uint8_t (&uuid)[16]);
+	std::tuple<std::optional<uint16_t>, result_t> update();
+	void set_registered(const std::array<std::byte, Sesame::SECRET_SIZE>& secret);
 	bool is_registered() const { return registered; }
 	size_t get_session_count() const;
-	bool send_notify(std::optional<uint16_t> session_id,
-	                 Sesame::op_code_t op_code,
-	                 Sesame::item_code_t item_code,
-	                 const std::byte* data,
-	                 size_t size);
+	result_t send_notify(std::optional<uint16_t> session_id,
+	                     Sesame::op_code_t op_code,
+	                     Sesame::item_code_t item_code,
+	                     const std::byte* data,
+	                     size_t size);
 
-	bool on_subscribed(uint16_t session_id);
-	bool on_received(uint16_t session_id, const std::byte* data, size_t size);
+	result_t on_subscribed(uint16_t session_id);
+	result_t on_received(uint16_t session_id, const std::byte* data, size_t size);
 	void on_disconnected(uint16_t session_id);
 	bool has_session(uint16_t session_id) const;
 
@@ -89,16 +88,18 @@ class SesameServerCoreImpl {
 	std::string version_tag;
 	auto_send::flags auto_send_flags =
 	    static_cast<auto_send::flags>(auto_send::flags::mecha_setting | auto_send::flags::mecha_status);
+	uint16_t update_cursor{};
 
-	bool handle_registration(ServerSession& session, const std::byte* payload, size_t size);
-	bool handle_login(ServerSession& session, const std::byte* payload, size_t size);
-	bool handle_version_tag(ServerSession& session);
-	bool handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
-	bool prepare_session_key(ServerSession& session);
+	result_t handle_registration(ServerSession& session, const std::byte* payload, size_t size);
+	result_t handle_login(ServerSession& session, const std::byte* payload, size_t size);
+	result_t handle_version_tag(ServerSession& session);
+	result_t handle_cmd_with_tag(ServerSession& session, Sesame::item_code_t cmd, const std::byte* payload, size_t size);
+	result_t prepare_session_key(ServerSession& session);
 	ServerSession* create_session(uint16_t session_id);
 	ServerSession* get_session(uint16_t session_id);
+	result_t update_one(ServerSession& session);
 
-	bool send_initial(ServerSession& session);
+	result_t send_initial(ServerSession& session);
 };
 
 }  // namespace libsesame3bt::core

@@ -10,10 +10,13 @@ using util::to_byte;
 using util::to_cptr;
 using util::to_ptr;
 
-bool
+result_t
 CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+	if (!key_prepared) {
+		return result_t::invalid_state;
+	}
 	if (in_len < CMAC_TAG_SIZE || out_size < in_len - CMAC_TAG_SIZE) {
-		return false;
+		return result_t::invalid_argument;
 	}
 	const auto& iv = as_peripheral ? c2p_iv : p2c_iv;
 	int mbrc;
@@ -21,25 +24,29 @@ CryptHandler::decrypt(const std::byte* in, size_t in_len, std::byte* out, size_t
 	                                     auth_add_data.size(), to_cptr(in), to_ptr(out), to_cptr(&in[in_len - CMAC_TAG_SIZE]),
 	                                     CMAC_TAG_SIZE)) != 0) {
 		DEBUG_PRINTF("%d: auth_decrypt failed\n", mbrc);
-		return false;
+		return result_t::crypt_failure;
 	}
 	update_dec_iv();
-	return true;
+	return result_t::success;
 }
 
-bool
+result_t
 CryptHandler::encrypt(const std::byte* in, size_t in_len, std::byte* out, size_t out_size) {
+	if (!key_prepared) {
+		return result_t::invalid_state;
+	}
 	if (out_size < in_len + CMAC_TAG_SIZE) {
-		return false;
+		return result_t::invalid_argument;
 	}
 	const auto& iv = as_peripheral ? p2c_iv : c2p_iv;
 	int rc;
 	if ((rc = mbedtls_ccm_encrypt_and_tag(&ccm_en_ctx, in_len, to_cptr(iv), iv.size(), to_cptr(auth_add_data), auth_add_data.size(),
 	                                      to_cptr(in), to_ptr(out), to_ptr(&out[in_len]), CMAC_TAG_SIZE)) != 0) {
 		DEBUG_PRINTF("%d: encrypt_and_tag failed\n", rc);
+		return result_t::crypt_failure;
 	}
 	update_enc_iv();
-	return true;
+	return result_t::success;
 }
 
 bool
